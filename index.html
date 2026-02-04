@@ -73,6 +73,30 @@
             display: flex;
             gap: 0.5rem;
             flex-wrap: wrap;
+            align-items: center;
+        }
+
+        /* Format selector */
+        .format-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-right: 0.5rem;
+        }
+
+        .format-selector label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-light);
+            margin: 0;
+        }
+
+        .format-selector select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            background: var(--card-bg);
         }
 
         /* Buttons */
@@ -432,6 +456,13 @@
         <div class="header-content">
             <div class="logo">VTO<span>Builder</span></div>
             <div class="header-actions">
+                <div class="format-selector">
+                    <label for="pdfFormat">PDF Format:</label>
+                    <select id="pdfFormat">
+                        <option value="letter">Letter (11 x 8.5)</option>
+                        <option value="ipad">iPad 11" (9.5 x 7)</option>
+                    </select>
+                </div>
                 <button class="btn btn-secondary" onclick="saveToLocalStorage()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                     Save
@@ -700,35 +731,39 @@
     <div id="toast" class="toast"></div>
 
     <script>
-        // Data structure
-        let vtoData = {
-            companyName: '',
-            vtoDate: '',
-            coreValues: [],
-            purpose: '',
-            niche: '',
-            tenYearDate: '',
-            tenYearTarget: '',
-            threeYearDate: '',
-            threeYearRevenue: '',
-            threeYearProfit: '',
-            threeYearBullets: [],
-            targetMarket: [],
-            threeUniques: [],
-            provenProcess: '',
-            guarantee: '',
-            oneYearDate: '',
-            oneYearRevenue: '',
-            oneYearProfit: '',
-            oneYearGoals: [],
-            oneYearTheme: '',
-            rocksDate: '',
-            rocksRevenue: '',
-            rocksProfit: '',
-            rocks: [],
-            rocksTheme: '',
-            issues: []
-        };
+        // Default data structure
+        function getDefaultData() {
+            return {
+                companyName: '',
+                vtoDate: '',
+                coreValues: [],
+                purpose: '',
+                niche: '',
+                tenYearDate: '',
+                tenYearTarget: '',
+                threeYearDate: '',
+                threeYearRevenue: '',
+                threeYearProfit: '',
+                threeYearBullets: [],
+                targetMarket: [],
+                threeUniques: [],
+                provenProcess: '',
+                guarantee: '',
+                oneYearDate: '',
+                oneYearRevenue: '',
+                oneYearProfit: '',
+                oneYearGoals: [],
+                oneYearTheme: '',
+                rocksDate: '',
+                rocksRevenue: '',
+                rocksProfit: '',
+                rocks: [],
+                rocksTheme: '',
+                issues: []
+            };
+        }
+
+        let vtoData = getDefaultData();
 
         // Tab handling
         document.querySelectorAll('.tab').forEach(tab => {
@@ -743,18 +778,18 @@
         // Initialize lists
         function initializeLists() {
             ['coreValues', 'threeYearBullets', 'targetMarket', 'threeUniques', 'oneYearGoals'].forEach(key => {
-                if (vtoData[key].length === 0) {
+                if (!Array.isArray(vtoData[key]) || vtoData[key].length === 0) {
                     vtoData[key] = [''];
                 }
                 renderList(key + 'List', key);
             });
 
-            if (vtoData.rocks.length === 0) {
+            if (!Array.isArray(vtoData.rocks) || vtoData.rocks.length === 0) {
                 vtoData.rocks = [{ text: '', owner: '' }];
             }
             renderRocksList();
 
-            if (vtoData.issues.length === 0) {
+            if (!Array.isArray(vtoData.issues) || vtoData.issues.length === 0) {
                 vtoData.issues = [{ text: '', status: '' }];
             }
             renderIssuesList();
@@ -791,10 +826,10 @@
                 div.className = 'rock-item';
                 div.innerHTML = `
                     <span class="item-number">${index + 1}.</span>
-                    <input type="text" value="${escapeHtml(rock.text)}"
+                    <input type="text" value="${escapeHtml(rock.text || '')}"
                            onchange="updateRock(${index}, 'text', this.value)"
                            placeholder="Rock description...">
-                    <input type="text" value="${escapeHtml(rock.owner)}"
+                    <input type="text" value="${escapeHtml(rock.owner || '')}"
                            onchange="updateRock(${index}, 'owner', this.value)"
                            placeholder="Owner">
                     <button class="btn-remove" onclick="removeRock(${index})" title="Remove">
@@ -813,16 +848,17 @@
             vtoData.issues.forEach((issue, index) => {
                 const div = document.createElement('div');
                 div.className = 'issue-item';
+                const status = issue.status || '';
                 div.innerHTML = `
                     <span class="item-number">${index + 1}.</span>
-                    <input type="text" value="${escapeHtml(issue.text)}"
+                    <input type="text" value="${escapeHtml(issue.text || '')}"
                            onchange="updateIssue(${index}, 'text', this.value)"
                            placeholder="Issue description...">
                     <select onchange="updateIssue(${index}, 'status', this.value)">
-                        <option value="" ${issue.status === '' ? 'selected' : ''}>No Status</option>
-                        <option value="IN PROGRESS" ${issue.status === 'IN PROGRESS' ? 'selected' : ''}>In Progress</option>
-                        <option value="DONE" ${issue.status === 'DONE' ? 'selected' : ''}>Done</option>
-                        <option value="NEED" ${issue.status === 'NEED' ? 'selected' : ''}>Need</option>
+                        <option value="" ${status === '' ? 'selected' : ''}>No Status</option>
+                        <option value="IN PROGRESS" ${status === 'IN PROGRESS' ? 'selected' : ''}>In Progress</option>
+                        <option value="DONE" ${status === 'DONE' ? 'selected' : ''}>Done</option>
+                        <option value="NEED" ${status === 'NEED' ? 'selected' : ''}>Need</option>
                     </select>
                     <button class="btn-remove" onclick="removeIssue(${index})" title="Remove">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -836,7 +872,6 @@
         function addListItem(containerId, dataKey) {
             vtoData[dataKey].push('');
             renderList(containerId, dataKey);
-            // Focus the new input
             const container = document.getElementById(containerId);
             const inputs = container.querySelectorAll('input');
             inputs[inputs.length - 1].focus();
@@ -893,7 +928,7 @@
             }
         }
 
-        // Collect form data
+        // Collect form data from inputs
         function collectFormData() {
             vtoData.companyName = document.getElementById('companyName').value;
             vtoData.vtoDate = document.getElementById('vtoDate').value;
@@ -914,6 +949,53 @@
             vtoData.rocksRevenue = document.getElementById('rocksRevenue').value;
             vtoData.rocksProfit = document.getElementById('rocksProfit').value;
             vtoData.rocksTheme = document.getElementById('rocksTheme').value;
+        }
+
+        // Collect list values directly from DOM (fixes bug #1: list edits lost on export)
+        function collectListsFromDOM() {
+            // Simple lists
+            const listMappings = {
+                'coreValuesList': 'coreValues',
+                'threeYearBulletsList': 'threeYearBullets',
+                'targetMarketList': 'targetMarket',
+                'threeUniquesList': 'threeUniques',
+                'oneYearGoalsList': 'oneYearGoals'
+            };
+
+            for (const [containerId, dataKey] of Object.entries(listMappings)) {
+                const container = document.getElementById(containerId);
+                if (container) {
+                    const inputs = container.querySelectorAll('input[type="text"]');
+                    vtoData[dataKey] = Array.from(inputs).map(input => input.value);
+                }
+            }
+
+            // Rocks list
+            const rocksContainer = document.getElementById('rocksList');
+            if (rocksContainer) {
+                const rockItems = rocksContainer.querySelectorAll('.rock-item');
+                vtoData.rocks = Array.from(rockItems).map(item => {
+                    const inputs = item.querySelectorAll('input[type="text"]');
+                    return {
+                        text: inputs[0] ? inputs[0].value : '',
+                        owner: inputs[1] ? inputs[1].value : ''
+                    };
+                });
+            }
+
+            // Issues list
+            const issuesContainer = document.getElementById('issuesList');
+            if (issuesContainer) {
+                const issueItems = issuesContainer.querySelectorAll('.issue-item');
+                vtoData.issues = Array.from(issueItems).map(item => {
+                    const input = item.querySelector('input[type="text"]');
+                    const select = item.querySelector('select');
+                    return {
+                        text: input ? input.value : '',
+                        status: select ? select.value : ''
+                    };
+                });
+            }
         }
 
         // Populate form from data
@@ -940,9 +1022,53 @@
             initializeLists();
         }
 
+        // Normalize imported data with defaults and type checks (fixes bug #3)
+        function normalizeData(data) {
+            const defaults = getDefaultData();
+            const normalized = { ...defaults };
+
+            for (const key in defaults) {
+                if (data.hasOwnProperty(key)) {
+                    const defaultVal = defaults[key];
+                    const importedVal = data[key];
+
+                    if (Array.isArray(defaultVal)) {
+                        // Ensure arrays are arrays
+                        if (Array.isArray(importedVal)) {
+                            normalized[key] = importedVal;
+                        }
+                    } else if (typeof defaultVal === 'string') {
+                        // Ensure strings are strings
+                        normalized[key] = typeof importedVal === 'string' ? importedVal : String(importedVal || '');
+                    } else {
+                        normalized[key] = importedVal;
+                    }
+                }
+            }
+
+            // Normalize rocks array items
+            if (Array.isArray(normalized.rocks)) {
+                normalized.rocks = normalized.rocks.map(rock => ({
+                    text: typeof rock === 'object' && rock !== null ? String(rock.text || '') : '',
+                    owner: typeof rock === 'object' && rock !== null ? String(rock.owner || '') : ''
+                }));
+            }
+
+            // Normalize issues array items
+            if (Array.isArray(normalized.issues)) {
+                normalized.issues = normalized.issues.map(issue => ({
+                    text: typeof issue === 'object' && issue !== null ? String(issue.text || '') : '',
+                    status: typeof issue === 'object' && issue !== null ? String(issue.status || '') : ''
+                }));
+            }
+
+            return normalized;
+        }
+
         // Save to localStorage
         function saveToLocalStorage() {
             collectFormData();
+            collectListsFromDOM();
             localStorage.setItem('vtoData', JSON.stringify(vtoData));
             showToast('Saved to browser storage', 'success');
         }
@@ -952,25 +1078,59 @@
             const saved = localStorage.getItem('vtoData');
             if (saved) {
                 try {
-                    vtoData = JSON.parse(saved);
+                    const parsed = JSON.parse(saved);
+                    vtoData = normalizeData(parsed);
                     populateForm();
                 } catch (e) {
                     console.error('Error loading saved data:', e);
+                    initializeLists();
                 }
             } else {
                 initializeLists();
             }
         }
 
+        // Sanitize filename (remove special chars, limit length)
+        function sanitizeFilename(name) {
+            if (!name) return 'export';
+            return name
+                .replace(/[^a-zA-Z0-9\s\-_]/g, '')
+                .replace(/\s+/g, '-')
+                .substring(0, 50)
+                .replace(/-+$/, '') || 'export';
+        }
+
+        // Replace unicode chars with ASCII for PDF
+        function toAscii(text) {
+            if (!text) return '';
+            return text
+                // Smart quotes
+                .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+                .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+                // Dashes
+                .replace(/[\u2013\u2014]/g, '-')
+                // Ellipsis
+                .replace(/\u2026/g, '...')
+                // Other common replacements
+                .replace(/\u00A0/g, ' ')  // Non-breaking space
+                .replace(/\u00AB/g, '<<')
+                .replace(/\u00BB/g, '>>')
+                .replace(/\u2022/g, '-')  // Bullet
+                .replace(/\u00B7/g, '-')  // Middle dot
+                .replace(/\u2019/g, "'"); // Right single quote
+        }
+
         // Export JSON
         function exportJSON() {
             collectFormData();
+            collectListsFromDOM();
             const dataStr = JSON.stringify(vtoData, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `VTO-${vtoData.companyName || 'export'}-${new Date().toISOString().split('T')[0]}.json`;
+            const safeName = sanitizeFilename(vtoData.companyName);
+            a.download = `VTO-${safeName}-${new Date().toISOString().split('T')[0]}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -986,10 +1146,12 @@
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
-                    vtoData = JSON.parse(e.target.result);
+                    const parsed = JSON.parse(e.target.result);
+                    vtoData = normalizeData(parsed);
                     populateForm();
                     showToast('VTO imported successfully', 'success');
                 } catch (err) {
+                    console.error('Import error:', err);
                     showToast('Invalid JSON file', 'error');
                 }
             };
@@ -1000,34 +1162,14 @@
         // Clear all
         function clearAll() {
             if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
-                vtoData = {
-                    companyName: '',
-                    vtoDate: '',
-                    coreValues: [''],
-                    purpose: '',
-                    niche: '',
-                    tenYearDate: '',
-                    tenYearTarget: '',
-                    threeYearDate: '',
-                    threeYearRevenue: '',
-                    threeYearProfit: '',
-                    threeYearBullets: [''],
-                    targetMarket: [''],
-                    threeUniques: [''],
-                    provenProcess: '',
-                    guarantee: '',
-                    oneYearDate: '',
-                    oneYearRevenue: '',
-                    oneYearProfit: '',
-                    oneYearGoals: [''],
-                    oneYearTheme: '',
-                    rocksDate: '',
-                    rocksRevenue: '',
-                    rocksProfit: '',
-                    rocks: [{ text: '', owner: '' }],
-                    rocksTheme: '',
-                    issues: [{ text: '', status: '' }]
-                };
+                vtoData = getDefaultData();
+                vtoData.coreValues = [''];
+                vtoData.threeYearBullets = [''];
+                vtoData.targetMarket = [''];
+                vtoData.threeUniques = [''];
+                vtoData.oneYearGoals = [''];
+                vtoData.rocks = [{ text: '', owner: '' }];
+                vtoData.issues = [{ text: '', status: '' }];
                 populateForm();
                 localStorage.removeItem('vtoData');
                 showToast('All data cleared', 'success');
@@ -1050,331 +1192,366 @@
             return div.innerHTML;
         }
 
-        // Format date for display
+        // Format date for display - parse as local time to avoid timezone offset (fixes bug #2)
         function formatDate(dateStr) {
             if (!dateStr) return '';
-            const date = new Date(dateStr);
+            // Parse YYYY-MM-DD as local date, not UTC
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
+            const day = parseInt(parts[2], 10);
+            const date = new Date(year, month, day);
             return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
         }
 
-        // PDF Export
+        // PDF Export - Landscape with EOS VTO style
         function exportPDF() {
+            // Collect ALL data including list DOM values
             collectFormData();
+            collectListsFromDOM();
 
             const { jsPDF } = window.jspdf;
+            const format = document.getElementById('pdfFormat').value;
+
+            // Page dimensions in mm (landscape)
+            let pageWidth, pageHeight;
+            if (format === 'ipad') {
+                // iPad 11" landscape: roughly 9.5 x 7 inches
+                pageWidth = 241.3; // 9.5 inches
+                pageHeight = 177.8; // 7 inches
+            } else {
+                // Letter landscape: 11 x 8.5 inches
+                pageWidth = 279.4; // 11 inches
+                pageHeight = 215.9; // 8.5 inches
+            }
+
             const doc = new jsPDF({
-                orientation: 'portrait',
+                orientation: 'landscape',
                 unit: 'mm',
-                format: 'letter'
+                format: [pageWidth, pageHeight]
             });
 
-            const pageWidth = 215.9;
-            const pageHeight = 279.4;
-            const margin = 15;
+            const margin = 10;
             const contentWidth = pageWidth - (margin * 2);
-            const colWidth = (contentWidth - 5) / 2;
+            const headerHeight = 12;
 
-            // Colors
-            const headerBg = [37, 99, 235];
-            const sectionBg = [241, 245, 249];
-            const textDark = [30, 41, 59];
-            const textLight = [100, 116, 139];
+            // EOS VTO Colors
+            const black = [0, 0, 0];
+            const white = [255, 255, 255];
+            const darkGray = [51, 51, 51];
+            const medGray = [128, 128, 128];
+            const lightGray = [240, 240, 240];
+            const borderGray = [180, 180, 180];
 
-            // Helper functions
-            function drawSectionHeader(text, x, y, width) {
-                doc.setFillColor(...headerBg);
-                doc.rect(x, y, width, 7, 'F');
-                doc.setTextColor(255, 255, 255);
-                doc.setFontSize(10);
-                doc.setFont('helvetica', 'bold');
-                doc.text(text, x + 3, y + 5);
-                return y + 9;
-            }
-
-            function drawSectionBox(x, y, width, height) {
-                doc.setFillColor(...sectionBg);
-                doc.setDrawColor(226, 232, 240);
-                doc.rect(x, y, width, height, 'FD');
-            }
-
-            function drawText(text, x, y, maxWidth, fontSize = 9, isBold = false) {
-                doc.setTextColor(...textDark);
-                doc.setFontSize(fontSize);
-                doc.setFont('helvetica', isBold ? 'bold' : 'normal');
-
-                if (maxWidth) {
-                    const lines = doc.splitTextToSize(text, maxWidth);
-                    doc.text(lines, x, y);
-                    return y + (lines.length * (fontSize * 0.4));
-                } else {
-                    doc.text(text, x, y);
-                    return y + (fontSize * 0.4);
-                }
-            }
-
-            function drawLabel(text, x, y) {
-                doc.setTextColor(...textLight);
+            // Helper: draw section box with header
+            function drawSection(title, x, y, width, height, content) {
+                // Header bar
+                doc.setFillColor(...black);
+                doc.rect(x, y, width, 6, 'F');
+                doc.setTextColor(...white);
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'bold');
-                doc.text(text, x, y);
-                return y + 4;
+                doc.text(toAscii(title), x + 2, y + 4);
+
+                // Content box
+                doc.setFillColor(...white);
+                doc.setDrawColor(...borderGray);
+                doc.setLineWidth(0.3);
+                doc.rect(x, y + 6, width, height - 6, 'FD');
+
+                return y + 8; // Return Y position for content
             }
 
-            function drawList(items, x, y, maxWidth, numbered = true) {
-                doc.setTextColor(...textDark);
-                doc.setFontSize(9);
-                doc.setFont('helvetica', 'normal');
+            // Helper: draw text with word wrap
+            function drawText(text, x, y, maxWidth, fontSize = 8, isBold = false) {
+                doc.setTextColor(...darkGray);
+                doc.setFontSize(fontSize);
+                doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+                const lines = doc.splitTextToSize(toAscii(text || ''), maxWidth);
+                doc.text(lines, x, y);
+                return y + (lines.length * (fontSize * 0.35));
+            }
 
+            // Helper: draw label
+            function drawLabel(text, x, y) {
+                doc.setTextColor(...medGray);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'bold');
+                doc.text(toAscii(text), x, y);
+                return y + 3;
+            }
+
+            // Helper: draw bullet list
+            function drawList(items, x, y, maxWidth, numbered = false) {
+                doc.setTextColor(...darkGray);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
                 let currentY = y;
-                items.filter(item => item && item.trim()).forEach((item, index) => {
-                    const prefix = numbered ? `${index + 1}. ` : '• ';
-                    const lines = doc.splitTextToSize(prefix + item, maxWidth - 5);
+                const filtered = (items || []).filter(item => item && String(item).trim());
+                filtered.forEach((item, index) => {
+                    const prefix = numbered ? `${index + 1}. ` : '- ';
+                    const lines = doc.splitTextToSize(toAscii(prefix + item), maxWidth);
                     doc.text(lines, x, currentY);
-                    currentY += lines.length * 3.5;
+                    currentY += lines.length * 3;
                 });
                 return currentY;
             }
 
             // ==================== PAGE 1: VISION ====================
 
-            // Header
-            doc.setFillColor(...headerBg);
-            doc.rect(0, 0, pageWidth, 20, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(16);
+            // Main header
+            doc.setFillColor(...black);
+            doc.rect(0, 0, pageWidth, headerHeight, 'F');
+            doc.setTextColor(...white);
+            doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
-            doc.text('VISION/TRACTION ORGANIZER', pageWidth / 2, 10, { align: 'center' });
-            doc.setFontSize(10);
+            doc.text('VISION/TRACTION ORGANIZER', pageWidth / 2, 7, { align: 'center' });
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
-            doc.text(vtoData.companyName || 'Company Name', pageWidth / 2, 16, { align: 'center' });
+            const companyDisplay = toAscii(vtoData.companyName || 'Company Name');
+            doc.text(companyDisplay, pageWidth / 2, 10.5, { align: 'center' });
 
-            // Page 1 indicator
-            doc.setFontSize(8);
-            doc.text('Page 1 of 2 - VISION', pageWidth - margin, 16, { align: 'right' });
+            // Page indicator
+            doc.setFontSize(7);
+            doc.text('Page 1: VISION', pageWidth - margin, 7, { align: 'right' });
 
-            let leftY = 25;
-            let rightY = 25;
-            const leftX = margin;
-            const rightX = margin + colWidth + 5;
+            // Layout: 4 columns
+            const colGap = 3;
+            const colWidth = (contentWidth - (colGap * 3)) / 4;
+            const startY = headerHeight + 3;
+            const availHeight = pageHeight - startY - 8;
 
-            // LEFT COLUMN - Page 1
+            // Column positions
+            const col1X = margin;
+            const col2X = margin + colWidth + colGap;
+            const col3X = margin + (colWidth + colGap) * 2;
+            const col4X = margin + (colWidth + colGap) * 3;
+
+            // Column 1: Core Values + Core Focus
+            let y1 = startY;
 
             // Core Values
-            leftY = drawSectionHeader('CORE VALUES', leftX, leftY, colWidth);
-            const cvItems = vtoData.coreValues.filter(v => v && v.trim());
-            const cvHeight = Math.max(25, cvItems.length * 5 + 5);
-            drawSectionBox(leftX, leftY, colWidth, cvHeight);
-            leftY = drawList(cvItems, leftX + 3, leftY + 5, colWidth - 6);
-            leftY += 5;
+            const cvItems = (vtoData.coreValues || []).filter(v => v && v.trim());
+            const cvHeight = Math.max(30, cvItems.length * 4 + 12);
+            let cvY = drawSection('CORE VALUES', col1X, y1, colWidth, cvHeight);
+            drawList(cvItems, col1X + 2, cvY, colWidth - 4, true);
+            y1 += cvHeight + 2;
 
             // Core Focus
-            leftY = drawSectionHeader('CORE FOCUS', leftX, leftY, colWidth);
-            const cfHeight = 35;
-            drawSectionBox(leftX, leftY, colWidth, cfHeight);
-            let cfY = leftY + 5;
-            cfY = drawLabel('Purpose / Cause / Passion:', leftX + 3, cfY);
-            cfY = drawText(vtoData.purpose || '', leftX + 3, cfY, colWidth - 6);
-            cfY += 3;
-            cfY = drawLabel('Our Niche:', leftX + 3, cfY);
-            drawText(vtoData.niche || '', leftX + 3, cfY, colWidth - 6);
-            leftY += cfHeight + 2;
+            const cfHeight = 45;
+            let cfY = drawSection('CORE FOCUS', col1X, y1, colWidth, cfHeight);
+            cfY = drawLabel('Purpose / Cause / Passion', col1X + 2, cfY);
+            cfY = drawText(vtoData.purpose || '', col1X + 2, cfY, colWidth - 4);
+            cfY += 2;
+            cfY = drawLabel('Our Niche', col1X + 2, cfY);
+            drawText(vtoData.niche || '', col1X + 2, cfY, colWidth - 4);
+            y1 += cfHeight + 2;
 
             // 10-Year Target
-            leftY = drawSectionHeader('10-YEAR TARGET', leftX, leftY, colWidth);
             const tenHeight = 25;
-            drawSectionBox(leftX, leftY, colWidth, tenHeight);
-            let tenY = leftY + 5;
+            let tenY = drawSection('10-YEAR TARGET', col1X, y1, colWidth, tenHeight);
             if (vtoData.tenYearDate) {
-                tenY = drawLabel('Target Date: ' + formatDate(vtoData.tenYearDate), leftX + 3, tenY);
+                tenY = drawLabel('Target Date: ' + formatDate(vtoData.tenYearDate), col1X + 2, tenY);
             }
-            drawText(vtoData.tenYearTarget || '', leftX + 3, tenY, colWidth - 6);
-            leftY += tenHeight + 2;
+            drawText(vtoData.tenYearTarget || '', col1X + 2, tenY, colWidth - 4);
 
-            // 3-Year Picture
-            leftY = drawSectionHeader('3-YEAR PICTURE', leftX, leftY, colWidth);
-            const bullets = vtoData.threeYearBullets.filter(b => b && b.trim());
-            const threeHeight = Math.max(50, 25 + bullets.length * 5);
-            drawSectionBox(leftX, leftY, colWidth, threeHeight);
-            let threeY = leftY + 5;
+            // Column 2: 3-Year Picture
+            let y2 = startY;
+            const bullets = (vtoData.threeYearBullets || []).filter(b => b && b.trim());
+            const threeHeight = Math.max(availHeight - 10, 80);
+            let threeY = drawSection('3-YEAR PICTURE', col2X, y2, colWidth, threeHeight);
+
             if (vtoData.threeYearDate) {
-                threeY = drawLabel('Date: ' + formatDate(vtoData.threeYearDate), leftX + 3, threeY);
+                threeY = drawLabel('Date: ' + formatDate(vtoData.threeYearDate), col2X + 2, threeY);
             }
             if (vtoData.threeYearRevenue || vtoData.threeYearProfit) {
-                const metrics = [];
-                if (vtoData.threeYearRevenue) metrics.push('Revenue: ' + vtoData.threeYearRevenue);
-                if (vtoData.threeYearProfit) metrics.push('Profit: ' + vtoData.threeYearProfit);
-                threeY = drawText(metrics.join('   |   '), leftX + 3, threeY, colWidth - 6, 9, true);
-                threeY += 2;
+                doc.setTextColor(...darkGray);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'bold');
+                if (vtoData.threeYearRevenue) {
+                    doc.text(toAscii('Revenue: ' + vtoData.threeYearRevenue), col2X + 2, threeY);
+                    threeY += 3;
+                }
+                if (vtoData.threeYearProfit) {
+                    doc.text(toAscii('Profit: ' + vtoData.threeYearProfit), col2X + 2, threeY);
+                    threeY += 3;
+                }
             }
-            threeY = drawLabel('What Does It Look Like?', leftX + 3, threeY);
-            drawList(bullets, leftX + 3, threeY, colWidth - 6, false);
-            leftY += threeHeight + 2;
+            threeY += 1;
+            threeY = drawLabel('What Does It Look Like?', col2X + 2, threeY);
+            drawList(bullets, col2X + 2, threeY, colWidth - 4);
 
-            // RIGHT COLUMN - Page 1
+            // Column 3 & 4: Marketing Strategy
+            let y3 = startY;
 
-            // Marketing Strategy
-            rightY = drawSectionHeader('MARKETING STRATEGY', rightX, rightY, colWidth);
+            // Target Market (Col 3)
+            const tmItems = (vtoData.targetMarket || []).filter(t => t && t.trim());
+            const tmHeight = Math.max(35, tmItems.length * 4 + 15);
+            let tmY = drawSection('TARGET MARKET', col3X, y3, colWidth, tmHeight);
+            tmY = drawLabel('Demographics, Geographics, Psychographics', col3X + 2, tmY);
+            drawList(tmItems, col3X + 2, tmY, colWidth - 4);
+            y3 += tmHeight + 2;
 
-            // Target Market
-            const tmItems = vtoData.targetMarket.filter(t => t && t.trim());
-            rightY = drawLabel('Target Market', rightX + 3, rightY + 4);
-            const tmHeight = Math.max(20, tmItems.length * 5 + 5);
-            drawSectionBox(rightX, rightY, colWidth, tmHeight);
-            rightY = drawList(tmItems, rightX + 3, rightY + 5, colWidth - 6, false);
-            rightY += 5;
+            // Three Uniques (Col 3)
+            const tuItems = (vtoData.threeUniques || []).filter(t => t && t.trim());
+            const tuHeight = Math.max(35, tuItems.length * 4 + 12);
+            let tuY = drawSection('THREE UNIQUES', col3X, y3, colWidth, tuHeight);
+            drawList(tuItems, col3X + 2, tuY, colWidth - 4, true);
+            y3 += tuHeight + 2;
 
-            // Three Uniques
-            const tuItems = vtoData.threeUniques.filter(t => t && t.trim());
-            rightY = drawLabel('Three Uniques', rightX + 3, rightY);
-            const tuHeight = Math.max(20, tuItems.length * 5 + 5);
-            drawSectionBox(rightX, rightY, colWidth, tuHeight);
-            rightY = drawList(tuItems, rightX + 3, rightY + 5, colWidth - 6);
-            rightY += 5;
+            // Proven Process (Col 3)
+            const ppHeight = 20;
+            let ppY = drawSection('PROVEN PROCESS', col3X, y3, colWidth, ppHeight);
+            drawText(vtoData.provenProcess || '', col3X + 2, ppY, colWidth - 4);
 
-            // Proven Process
-            rightY = drawLabel('Proven Process', rightX + 3, rightY);
-            const ppHeight = 15;
-            drawSectionBox(rightX, rightY, colWidth, ppHeight);
-            drawText(vtoData.provenProcess || '', rightX + 3, rightY + 5, colWidth - 6);
-            rightY += ppHeight + 3;
-
-            // Guarantee
-            rightY = drawLabel('Guarantee', rightX + 3, rightY);
-            const gHeight = 15;
-            drawSectionBox(rightX, rightY, colWidth, gHeight);
-            drawText(vtoData.guarantee || '', rightX + 3, rightY + 5, colWidth - 6);
-            rightY += gHeight + 3;
+            // Column 4: Guarantee
+            let y4 = startY;
+            const gHeight = 30;
+            let gY = drawSection('GUARANTEE', col4X, y4, colWidth, gHeight);
+            drawText(vtoData.guarantee || '', col4X + 2, gY, colWidth - 4);
 
             // Footer
-            doc.setTextColor(...textLight);
-            doc.setFontSize(8);
-            doc.text('Generated with VTO Builder', pageWidth / 2, pageHeight - 8, { align: 'center' });
+            doc.setTextColor(...medGray);
+            doc.setFontSize(6);
+            doc.text('Generated with VTO Builder', pageWidth / 2, pageHeight - 3, { align: 'center' });
             if (vtoData.vtoDate) {
-                doc.text('VTO Date: ' + formatDate(vtoData.vtoDate), margin, pageHeight - 8);
+                doc.text(toAscii('VTO Date: ' + formatDate(vtoData.vtoDate)), margin, pageHeight - 3);
             }
 
             // ==================== PAGE 2: TRACTION ====================
-            doc.addPage();
+            doc.addPage([pageWidth, pageHeight], 'landscape');
 
-            // Header
-            doc.setFillColor(...headerBg);
-            doc.rect(0, 0, pageWidth, 20, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(16);
+            // Main header
+            doc.setFillColor(...black);
+            doc.rect(0, 0, pageWidth, headerHeight, 'F');
+            doc.setTextColor(...white);
+            doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
-            doc.text('VISION/TRACTION ORGANIZER', pageWidth / 2, 10, { align: 'center' });
-            doc.setFontSize(10);
+            doc.text('VISION/TRACTION ORGANIZER', pageWidth / 2, 7, { align: 'center' });
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
-            doc.text(vtoData.companyName || 'Company Name', pageWidth / 2, 16, { align: 'center' });
+            doc.text(companyDisplay, pageWidth / 2, 10.5, { align: 'center' });
+            doc.setFontSize(7);
+            doc.text('Page 2: TRACTION', pageWidth - margin, 7, { align: 'right' });
 
-            // Page 2 indicator
-            doc.setFontSize(8);
-            doc.text('Page 2 of 2 - TRACTION', pageWidth - margin, 16, { align: 'right' });
+            // 3-column layout for Traction
+            const tColWidth = (contentWidth - (colGap * 2)) / 3;
+            const tCol1X = margin;
+            const tCol2X = margin + tColWidth + colGap;
+            const tCol3X = margin + (tColWidth + colGap) * 2;
 
-            leftY = 25;
-            rightY = 25;
-
-            // LEFT COLUMN - Page 2
-
-            // 1-Year Plan
-            leftY = drawSectionHeader('1-YEAR PLAN', leftX, leftY, colWidth);
-            const goals = vtoData.oneYearGoals.filter(g => g && g.trim());
-            const oneYearHeight = Math.max(60, 30 + goals.length * 5);
-            drawSectionBox(leftX, leftY, colWidth, oneYearHeight);
-            let oyY = leftY + 5;
+            // Column 1: 1-Year Plan
+            y1 = startY;
+            const goals = (vtoData.oneYearGoals || []).filter(g => g && g.trim());
+            const oneYearHeight = availHeight - 5;
+            let oyY = drawSection('1-YEAR PLAN', tCol1X, y1, tColWidth, oneYearHeight);
 
             if (vtoData.oneYearDate) {
-                oyY = drawLabel('Date: ' + formatDate(vtoData.oneYearDate), leftX + 3, oyY);
+                oyY = drawLabel('Date: ' + formatDate(vtoData.oneYearDate), tCol1X + 2, oyY);
             }
             if (vtoData.oneYearRevenue || vtoData.oneYearProfit) {
-                const metrics = [];
-                if (vtoData.oneYearRevenue) metrics.push('Revenue: ' + vtoData.oneYearRevenue);
-                if (vtoData.oneYearProfit) metrics.push('Profit: ' + vtoData.oneYearProfit);
-                oyY = drawText(metrics.join('   |   '), leftX + 3, oyY, colWidth - 6, 9, true);
-                oyY += 3;
+                doc.setTextColor(...darkGray);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'bold');
+                if (vtoData.oneYearRevenue) {
+                    doc.text(toAscii('Revenue: ' + vtoData.oneYearRevenue), tCol1X + 2, oyY);
+                    oyY += 3;
+                }
+                if (vtoData.oneYearProfit) {
+                    doc.text(toAscii('Profit: ' + vtoData.oneYearProfit), tCol1X + 2, oyY);
+                    oyY += 3;
+                }
             }
             if (vtoData.oneYearTheme) {
-                oyY = drawLabel('Theme: ' + vtoData.oneYearTheme, leftX + 3, oyY);
+                oyY += 1;
+                oyY = drawLabel('Theme: ' + vtoData.oneYearTheme, tCol1X + 2, oyY);
             }
-            oyY = drawLabel('Goals:', leftX + 3, oyY);
-            drawList(goals, leftX + 3, oyY, colWidth - 6);
-            leftY += oneYearHeight + 2;
+            oyY += 1;
+            oyY = drawLabel('Goals', tCol1X + 2, oyY);
+            drawList(goals, tCol1X + 2, oyY, tColWidth - 4, true);
 
-            // Quarterly Rocks
-            leftY = drawSectionHeader('QUARTERLY ROCKS', leftX, leftY, colWidth);
-            const rocksFiltered = vtoData.rocks.filter(r => r.text && r.text.trim());
-            const rocksHeight = Math.max(60, 30 + rocksFiltered.length * 6);
-            drawSectionBox(leftX, leftY, colWidth, rocksHeight);
-            let qrY = leftY + 5;
+            // Column 2: Quarterly Rocks
+            y2 = startY;
+            const rocksFiltered = (vtoData.rocks || []).filter(r => r && r.text && r.text.trim());
+            const rocksHeight = availHeight - 5;
+            let qrY = drawSection('QUARTERLY ROCKS', tCol2X, y2, tColWidth, rocksHeight);
 
             if (vtoData.rocksDate) {
-                qrY = drawLabel('Quarter End: ' + formatDate(vtoData.rocksDate), leftX + 3, qrY);
+                qrY = drawLabel('Quarter End: ' + formatDate(vtoData.rocksDate), tCol2X + 2, qrY);
             }
             if (vtoData.rocksRevenue || vtoData.rocksProfit) {
-                const metrics = [];
-                if (vtoData.rocksRevenue) metrics.push('Revenue: ' + vtoData.rocksRevenue);
-                if (vtoData.rocksProfit) metrics.push('Profit: ' + vtoData.rocksProfit);
-                qrY = drawText(metrics.join('   |   '), leftX + 3, qrY, colWidth - 6, 9, true);
-                qrY += 2;
+                doc.setTextColor(...darkGray);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'bold');
+                if (vtoData.rocksRevenue) {
+                    doc.text(toAscii('Revenue: ' + vtoData.rocksRevenue), tCol2X + 2, qrY);
+                    qrY += 3;
+                }
+                if (vtoData.rocksProfit) {
+                    doc.text(toAscii('Profit: ' + vtoData.rocksProfit), tCol2X + 2, qrY);
+                    qrY += 3;
+                }
             }
             if (vtoData.rocksTheme) {
-                qrY = drawLabel('Theme: ' + vtoData.rocksTheme, leftX + 3, qrY);
+                qrY += 1;
+                qrY = drawLabel('Theme: ' + vtoData.rocksTheme, tCol2X + 2, qrY);
             }
+            qrY += 1;
 
             // Draw rocks with owners
-            doc.setTextColor(...textDark);
-            doc.setFontSize(9);
+            doc.setTextColor(...darkGray);
+            doc.setFontSize(8);
             rocksFiltered.forEach((rock, index) => {
-                const rockText = `${index + 1}. ${rock.text}`;
-                const ownerText = rock.owner ? ` (${rock.owner})` : '';
-                const lines = doc.splitTextToSize(rockText + ownerText, colWidth - 8);
-                doc.text(lines, leftX + 3, qrY);
-                qrY += lines.length * 3.5;
+                const rockText = `${index + 1}. ${toAscii(rock.text)}`;
+                const ownerText = rock.owner ? ` (${toAscii(rock.owner)})` : '';
+                const lines = doc.splitTextToSize(rockText + ownerText, tColWidth - 6);
+                doc.text(lines, tCol2X + 2, qrY);
+                qrY += lines.length * 3 + 1;
             });
-            leftY += rocksHeight + 2;
 
-            // RIGHT COLUMN - Page 2
+            // Column 3: Issues List
+            y3 = startY;
+            const issuesFiltered = (vtoData.issues || []).filter(i => i && i.text && i.text.trim());
+            const issuesHeight = availHeight - 5;
+            let issY = drawSection('ISSUES LIST', tCol3X, y3, tColWidth, issuesHeight);
 
-            // Issues List
-            rightY = drawSectionHeader('ISSUES LIST (PARKING LOT)', rightX, rightY, colWidth);
-            const issuesFiltered = vtoData.issues.filter(i => i.text && i.text.trim());
-            const issuesHeight = Math.max(100, issuesFiltered.length * 8 + 10);
-            drawSectionBox(rightX, rightY, colWidth, issuesHeight);
-            let issY = rightY + 5;
-
-            doc.setFontSize(9);
+            doc.setFontSize(8);
             issuesFiltered.forEach((issue, index) => {
-                doc.setTextColor(...textDark);
-                const issueText = `${index + 1}. ${issue.text}`;
-                const lines = doc.splitTextToSize(issueText, colWidth - 30);
-                doc.text(lines, rightX + 3, issY);
+                doc.setTextColor(...darkGray);
+                const issueText = `${index + 1}. ${toAscii(issue.text)}`;
+                const lines = doc.splitTextToSize(issueText, tColWidth - 25);
+                doc.text(lines, tCol3X + 2, issY);
 
                 if (issue.status) {
-                    doc.setFontSize(7);
+                    doc.setFontSize(6);
                     let statusColor;
                     switch(issue.status) {
                         case 'DONE': statusColor = [16, 185, 129]; break;
                         case 'IN PROGRESS': statusColor = [245, 158, 11]; break;
                         case 'NEED': statusColor = [239, 68, 68]; break;
-                        default: statusColor = textLight;
+                        default: statusColor = medGray;
                     }
                     doc.setTextColor(...statusColor);
-                    doc.text(issue.status, rightX + colWidth - 5, issY, { align: 'right' });
-                    doc.setFontSize(9);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(issue.status, tCol3X + tColWidth - 3, issY, { align: 'right' });
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
                 }
-                issY += lines.length * 3.5 + 2;
+                issY += lines.length * 3 + 2;
             });
 
             // Footer
-            doc.setTextColor(...textLight);
-            doc.setFontSize(8);
-            doc.text('Generated with VTO Builder', pageWidth / 2, pageHeight - 8, { align: 'center' });
+            doc.setTextColor(...medGray);
+            doc.setFontSize(6);
+            doc.text('Generated with VTO Builder', pageWidth / 2, pageHeight - 3, { align: 'center' });
             if (vtoData.vtoDate) {
-                doc.text('VTO Date: ' + formatDate(vtoData.vtoDate), margin, pageHeight - 8);
+                doc.text(toAscii('VTO Date: ' + formatDate(vtoData.vtoDate)), margin, pageHeight - 3);
             }
 
-            // Save
-            doc.save(`VTO-${vtoData.companyName || 'export'}-${new Date().toISOString().split('T')[0]}.pdf`);
+            // Save with sanitized filename
+            const safeName = sanitizeFilename(vtoData.companyName);
+            doc.save(`VTO-${safeName}-${new Date().toISOString().split('T')[0]}.pdf`);
             showToast('PDF exported successfully', 'success');
         }
 

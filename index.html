@@ -364,7 +364,8 @@
             color: rgba(255,255,255,0.9);
         }
 
-        .company-section input {
+        .company-section input,
+        .company-section select {
             background: rgba(255,255,255,0.95);
         }
 
@@ -500,6 +501,16 @@
                     <label for="vtoDate">VTO Date</label>
                     <input type="date" id="vtoDate">
                 </div>
+                <div class="form-group">
+                    <label for="quarter">Quarter</label>
+                    <select id="quarter">
+                        <option value="">Select Quarter</option>
+                        <option value="Q1">Q1</option>
+                        <option value="Q2">Q2</option>
+                        <option value="Q3">Q3</option>
+                        <option value="Q4">Q4</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -524,6 +535,19 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     Add Core Value
                 </button>
+            </div>
+
+            <!-- The Bar -->
+            <div class="section">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">The Bar</h2>
+                        <p class="section-subtitle">Performance indicators for each Core Value (e.g., +/-, +/-, +, +)</p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="theBar" placeholder="+/-, +/-, +, +" style="font-family: monospace;">
+                </div>
             </div>
 
             <!-- Core Focus -->
@@ -736,6 +760,8 @@
             return {
                 companyName: '',
                 vtoDate: '',
+                quarter: '',
+                theBar: '',
                 coreValues: [],
                 purpose: '',
                 niche: '',
@@ -932,6 +958,8 @@
         function collectFormData() {
             vtoData.companyName = document.getElementById('companyName').value;
             vtoData.vtoDate = document.getElementById('vtoDate').value;
+            vtoData.quarter = document.getElementById('quarter').value;
+            vtoData.theBar = document.getElementById('theBar').value;
             vtoData.purpose = document.getElementById('purpose').value;
             vtoData.niche = document.getElementById('niche').value;
             vtoData.tenYearDate = document.getElementById('tenYearDate').value;
@@ -1002,6 +1030,8 @@
         function populateForm() {
             document.getElementById('companyName').value = vtoData.companyName || '';
             document.getElementById('vtoDate').value = vtoData.vtoDate || '';
+            document.getElementById('quarter').value = vtoData.quarter || '';
+            document.getElementById('theBar').value = vtoData.theBar || '';
             document.getElementById('purpose').value = vtoData.purpose || '';
             document.getElementById('niche').value = vtoData.niche || '';
             document.getElementById('tenYearDate').value = vtoData.tenYearDate || '';
@@ -1205,7 +1235,7 @@
             return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
         }
 
-        // PDF Export - Landscape with EOS VTO style
+        // PDF Export - Modern Premium Design for E.F. San Juan
         function exportPDF() {
             // Collect ALL data including list DOM values
             collectFormData();
@@ -1217,11 +1247,9 @@
             // Page dimensions in mm (landscape)
             let pageWidth, pageHeight;
             if (format === 'ipad') {
-                // iPad 11" landscape: roughly 9.5 x 7 inches
                 pageWidth = 241.3; // 9.5 inches
                 pageHeight = 177.8; // 7 inches
             } else {
-                // Letter landscape: 11 x 8.5 inches
                 pageWidth = 279.4; // 11 inches
                 pageHeight = 215.9; // 8.5 inches
             }
@@ -1232,95 +1260,214 @@
                 format: [pageWidth, pageHeight]
             });
 
+            // Modern layout settings
             const margin = 10;
             const contentWidth = pageWidth - (margin * 2);
-            const headerHeight = 12;
+            const headerHeight = 18;
+            const cornerRadius = 3;
 
-            // EOS VTO Colors
-            const black = [0, 0, 0];
+            // Premium Color Palette
+            const navy = [30, 58, 95];        // #1e3a5f - primary headers
+            const gold = [201, 162, 39];      // #c9a227 - accents
             const white = [255, 255, 255];
-            const darkGray = [51, 51, 51];
-            const medGray = [128, 128, 128];
-            const lightGray = [240, 240, 240];
-            const borderGray = [180, 180, 180];
+            const offWhite = [250, 250, 252]; // Subtle background
+            const textDark = [31, 41, 55];    // Dark text
+            const textMuted = [107, 114, 128]; // Muted text
+            const borderLight = [209, 213, 219]; // #d1d5db
 
-            // Helper: draw section box with header
-            function drawSection(title, x, y, width, height, content) {
-                // Header bar
-                doc.setFillColor(...black);
-                doc.rect(x, y, width, 6, 'F');
+            // Get quarter display string
+            function getQuarterDisplay() {
+                if (!vtoData.quarter) return '';
+                const year = vtoData.vtoDate ? new Date(vtoData.vtoDate + 'T00:00:00').getFullYear() : new Date().getFullYear();
+                return `${vtoData.quarter} ${year}`;
+            }
+
+            // Helper: Draw rounded rectangle
+            function roundedRect(x, y, w, h, r, style = 'S') {
+                doc.roundedRect(x, y, w, h, r, r, style);
+            }
+
+            // Helper: Draw modern section with rounded corners and elegant header
+            function drawModernSection(title, x, y, width, height, opts = {}) {
+                const headerH = opts.headerHeight || 7;
+                const showGoldAccent = opts.goldAccent !== false;
+
+                // Section container with subtle border
+                doc.setFillColor(...white);
+                doc.setDrawColor(...borderLight);
+                doc.setLineWidth(0.3);
+                roundedRect(x, y, width, height, cornerRadius, 'FD');
+
+                // Header background with gradient effect (navy bar)
+                doc.setFillColor(...navy);
+                // Draw header with only top corners rounded
+                doc.roundedRect(x, y, width, headerH, cornerRadius, cornerRadius, 'F');
+                // Fill bottom part of header to make square bottom
+                doc.rect(x, y + cornerRadius, width, headerH - cornerRadius, 'F');
+
+                // Gold accent line under header
+                if (showGoldAccent) {
+                    doc.setFillColor(...gold);
+                    doc.rect(x, y + headerH, width, 0.8, 'F');
+                }
+
+                // Header text
                 doc.setTextColor(...white);
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'bold');
-                doc.text(toAscii(title), x + 2, y + 4);
+                doc.text(toAscii(title.toUpperCase()), x + 4, y + headerH - 2);
 
-                // Content box
-                doc.setFillColor(...white);
-                doc.setDrawColor(...borderGray);
-                doc.setLineWidth(0.3);
-                doc.rect(x, y + 6, width, height - 6, 'FD');
-
-                return y + 8; // Return Y position for content
+                return y + headerH + (showGoldAccent ? 3.5 : 2.5);
             }
 
-            // Helper: draw text with word wrap
-            function drawText(text, x, y, maxWidth, fontSize = 8, isBold = false) {
-                doc.setTextColor(...darkGray);
+            // Helper: Draw text with word wrap
+            function drawText(text, x, y, maxWidth, fontSize = 8, isBold = false, color = textDark) {
+                doc.setTextColor(...color);
                 doc.setFontSize(fontSize);
                 doc.setFont('helvetica', isBold ? 'bold' : 'normal');
                 const lines = doc.splitTextToSize(toAscii(text || ''), maxWidth);
                 doc.text(lines, x, y);
-                return y + (lines.length * (fontSize * 0.35));
+                return y + (lines.length * (fontSize * 0.42));
             }
 
-            // Helper: draw label
-            function drawLabel(text, x, y) {
-                doc.setTextColor(...medGray);
-                doc.setFontSize(7);
+            // Helper: Draw elegant label
+            function drawLabel(text, x, y, useGold = false) {
+                doc.setTextColor(...(useGold ? gold : textMuted));
+                doc.setFontSize(6.5);
                 doc.setFont('helvetica', 'bold');
-                doc.text(toAscii(text), x, y);
-                return y + 3;
+                doc.text(toAscii(text.toUpperCase()), x, y);
+                return y + 3.5;
             }
 
-            // Helper: draw bullet list
-            function drawList(items, x, y, maxWidth, numbered = false) {
-                doc.setTextColor(...darkGray);
+            // Helper: Draw bullet list with modern styling
+            function drawList(items, x, y, maxWidth, numbered = false, lineHeight = 3.2) {
+                doc.setTextColor(...textDark);
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'normal');
                 let currentY = y;
                 const filtered = (items || []).filter(item => item && String(item).trim());
                 filtered.forEach((item, index) => {
-                    const prefix = numbered ? `${index + 1}. ` : '- ';
-                    const lines = doc.splitTextToSize(toAscii(prefix + item), maxWidth);
-                    doc.text(lines, x, currentY);
-                    currentY += lines.length * 3;
+                    if (numbered) {
+                        // Draw number with gold accent
+                        doc.setTextColor(...gold);
+                        doc.setFont('helvetica', 'bold');
+                        doc.text(`${index + 1}.`, x, currentY);
+                        doc.setTextColor(...textDark);
+                        doc.setFont('helvetica', 'normal');
+                        const lines = doc.splitTextToSize(toAscii(item), maxWidth - 6);
+                        doc.text(lines, x + 6, currentY);
+                        currentY += lines.length * lineHeight;
+                    } else {
+                        // Modern bullet point
+                        doc.setFillColor(...gold);
+                        doc.circle(x + 1, currentY - 1, 0.6, 'F');
+                        doc.setTextColor(...textDark);
+                        const lines = doc.splitTextToSize(toAscii(item), maxWidth - 5);
+                        doc.text(lines, x + 5, currentY);
+                        currentY += lines.length * lineHeight;
+                    }
                 });
                 return currentY;
             }
 
+            // Helper: Draw metric badge
+            function drawMetric(label, value, x, y, width) {
+                if (!value) return y;
+                doc.setFillColor(...offWhite);
+                doc.setDrawColor(...borderLight);
+                doc.setLineWidth(0.2);
+                roundedRect(x, y - 3, width, 7, 1.5, 'FD');
+                doc.setTextColor(...textMuted);
+                doc.setFontSize(6);
+                doc.setFont('helvetica', 'normal');
+                doc.text(toAscii(label), x + 2, y);
+                doc.setTextColor(...navy);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'bold');
+                doc.text(toAscii(value), x + 2, y + 3);
+                return y + 9;
+            }
+
+            // ==================== PAGE HEADER FUNCTION ====================
+            function drawPageHeader(pageNum, pageTitle) {
+                // Full-width navy header
+                doc.setFillColor(...navy);
+                doc.rect(0, 0, pageWidth, headerHeight, 'F');
+
+                // Gold accent line at bottom of header
+                doc.setFillColor(...gold);
+                doc.rect(0, headerHeight - 1.5, pageWidth, 1.5, 'F');
+
+                // Brand name - left aligned, prominent
+                doc.setTextColor(...white);
+                doc.setFontSize(16);
+                doc.setFont('helvetica', 'bold');
+                doc.text('E.F. SAN JUAN', margin, 9);
+
+                // Tagline
+                doc.setTextColor(...gold);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'italic');
+                doc.text('Plan perfection, deliver excellence', margin, 13.5);
+
+                // Document title - center
+                doc.setTextColor(...white);
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('VISION / TRACTION ORGANIZER', pageWidth / 2, 8, { align: 'center' });
+
+                // Company name
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                const companyDisplay = toAscii(vtoData.companyName || 'Company Name');
+                doc.text(companyDisplay, pageWidth / 2, 13, { align: 'center' });
+
+                // Page indicator and quarter - right aligned
+                const quarterStr = getQuarterDisplay();
+                if (quarterStr) {
+                    doc.setTextColor(...gold);
+                    doc.setFontSize(9);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(quarterStr, pageWidth - margin, 8, { align: 'right' });
+                }
+                doc.setTextColor(...white);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`Page ${pageNum}: ${pageTitle}`, pageWidth - margin, 13, { align: 'right' });
+            }
+
+            // ==================== PAGE FOOTER FUNCTION ====================
+            function drawPageFooter() {
+                const footerY = pageHeight - 6;
+                // Subtle footer line
+                doc.setDrawColor(...borderLight);
+                doc.setLineWidth(0.3);
+                doc.line(margin, footerY - 2, pageWidth - margin, footerY - 2);
+
+                // Date on left
+                if (vtoData.vtoDate) {
+                    doc.setTextColor(...textMuted);
+                    doc.setFontSize(6);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(toAscii(formatDate(vtoData.vtoDate)), margin, footerY);
+                }
+
+                // E.F. San Juan branding on right
+                doc.setTextColor(...navy);
+                doc.setFontSize(6);
+                doc.setFont('helvetica', 'bold');
+                doc.text('E.F. SAN JUAN', pageWidth - margin, footerY, { align: 'right' });
+            }
+
             // ==================== PAGE 1: VISION ====================
+            drawPageHeader(1, 'VISION');
 
-            // Main header
-            doc.setFillColor(...black);
-            doc.rect(0, 0, pageWidth, headerHeight, 'F');
-            doc.setTextColor(...white);
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.text('VISION/TRACTION ORGANIZER', pageWidth / 2, 7, { align: 'center' });
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'normal');
-            const companyDisplay = toAscii(vtoData.companyName || 'Company Name');
-            doc.text(companyDisplay, pageWidth / 2, 10.5, { align: 'center' });
-
-            // Page indicator
-            doc.setFontSize(7);
-            doc.text('Page 1: VISION', pageWidth - margin, 7, { align: 'right' });
-
-            // Layout: 4 columns
-            const colGap = 3;
+            // Layout calculations
+            const startY = headerHeight + 4;
+            const footerHeight = 8;
+            const availHeight = pageHeight - startY - footerHeight;
+            const colGap = 4;
             const colWidth = (contentWidth - (colGap * 3)) / 4;
-            const startY = headerHeight + 3;
-            const availHeight = pageHeight - startY - 8;
 
             // Column positions
             const col1X = margin;
@@ -1328,226 +1475,279 @@
             const col3X = margin + (colWidth + colGap) * 2;
             const col4X = margin + (colWidth + colGap) * 3;
 
-            // Column 1: Core Values + Core Focus
+            // ---- Column 1: Core Values + Core Focus + 10-Year ----
             let y1 = startY;
 
             // Core Values
             const cvItems = (vtoData.coreValues || []).filter(v => v && v.trim());
-            const cvHeight = Math.max(30, cvItems.length * 4 + 12);
-            let cvY = drawSection('CORE VALUES', col1X, y1, colWidth, cvHeight);
-            drawList(cvItems, col1X + 2, cvY, colWidth - 4, true);
-            y1 += cvHeight + 2;
+            const cvHeight = Math.max(30, cvItems.length * 3.5 + 14);
+            let cvY = drawModernSection('Core Values', col1X, y1, colWidth, cvHeight);
+
+            // The Bar inline
+            if (vtoData.theBar) {
+                doc.setTextColor(...gold);
+                doc.setFontSize(6);
+                doc.setFont('helvetica', 'bold');
+                doc.text(toAscii('THE BAR: ' + vtoData.theBar), col1X + 4, cvY);
+                cvY += 4;
+            }
+            drawList(cvItems, col1X + 4, cvY, colWidth - 8, true, 3);
+            y1 += cvHeight + 3;
 
             // Core Focus
-            const cfHeight = 45;
-            let cfY = drawSection('CORE FOCUS', col1X, y1, colWidth, cfHeight);
-            cfY = drawLabel('Purpose / Cause / Passion', col1X + 2, cfY);
-            cfY = drawText(vtoData.purpose || '', col1X + 2, cfY, colWidth - 4);
-            cfY += 2;
-            cfY = drawLabel('Our Niche', col1X + 2, cfY);
-            drawText(vtoData.niche || '', col1X + 2, cfY, colWidth - 4);
-            y1 += cfHeight + 2;
+            const cfHeight = 38;
+            let cfY = drawModernSection('Core Focus', col1X, y1, colWidth, cfHeight);
+            cfY = drawLabel('Purpose / Cause / Passion', col1X + 4, cfY, true);
+            cfY = drawText(vtoData.purpose || '', col1X + 4, cfY, colWidth - 8, 8);
+            cfY += 3;
+            cfY = drawLabel('Our Niche', col1X + 4, cfY, true);
+            drawText(vtoData.niche || '', col1X + 4, cfY, colWidth - 8, 8);
+            y1 += cfHeight + 3;
 
             // 10-Year Target
-            const tenHeight = 25;
-            let tenY = drawSection('10-YEAR TARGET', col1X, y1, colWidth, tenHeight);
+            const tenHeight = availHeight - (cvHeight + cfHeight + 6);
+            let tenY = drawModernSection('10-Year Target', col1X, y1, colWidth, Math.max(tenHeight, 25));
             if (vtoData.tenYearDate) {
-                tenY = drawLabel('Target Date: ' + formatDate(vtoData.tenYearDate), col1X + 2, tenY);
-            }
-            drawText(vtoData.tenYearTarget || '', col1X + 2, tenY, colWidth - 4);
-
-            // Column 2: 3-Year Picture
-            let y2 = startY;
-            const bullets = (vtoData.threeYearBullets || []).filter(b => b && b.trim());
-            const threeHeight = Math.max(availHeight - 10, 80);
-            let threeY = drawSection('3-YEAR PICTURE', col2X, y2, colWidth, threeHeight);
-
-            if (vtoData.threeYearDate) {
-                threeY = drawLabel('Date: ' + formatDate(vtoData.threeYearDate), col2X + 2, threeY);
-            }
-            if (vtoData.threeYearRevenue || vtoData.threeYearProfit) {
-                doc.setTextColor(...darkGray);
+                doc.setTextColor(...gold);
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'bold');
+                doc.text(toAscii(formatDate(vtoData.tenYearDate)), col1X + 4, tenY);
+                tenY += 4;
+            }
+            drawText(vtoData.tenYearTarget || '', col1X + 4, tenY, colWidth - 8, 8);
+
+            // ---- Column 2: 3-Year Picture ----
+            let y2 = startY;
+            const bullets = (vtoData.threeYearBullets || []).filter(b => b && b.trim());
+            const threeHeight = availHeight;
+            let threeY = drawModernSection('3-Year Picture', col2X, y2, colWidth, threeHeight);
+
+            // Date and metrics
+            if (vtoData.threeYearDate) {
+                doc.setTextColor(...navy);
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'bold');
+                doc.text(toAscii(formatDate(vtoData.threeYearDate)), col2X + 4, threeY);
+                threeY += 5;
+            }
+
+            // Revenue and profit metrics side by side
+            if (vtoData.threeYearRevenue || vtoData.threeYearProfit) {
+                const metricWidth = (colWidth - 12) / 2;
                 if (vtoData.threeYearRevenue) {
-                    doc.text(toAscii('Revenue: ' + vtoData.threeYearRevenue), col2X + 2, threeY);
-                    threeY += 3;
+                    drawMetric('Revenue', vtoData.threeYearRevenue, col2X + 4, threeY, metricWidth);
                 }
                 if (vtoData.threeYearProfit) {
-                    doc.text(toAscii('Profit: ' + vtoData.threeYearProfit), col2X + 2, threeY);
-                    threeY += 3;
+                    drawMetric('Profit', vtoData.threeYearProfit, col2X + 4 + metricWidth + 2, threeY, metricWidth);
                 }
+                threeY += 11;
             }
-            threeY += 1;
-            threeY = drawLabel('What Does It Look Like?', col2X + 2, threeY);
-            drawList(bullets, col2X + 2, threeY, colWidth - 4);
 
-            // Column 3 & 4: Marketing Strategy
+            threeY = drawLabel('What Does It Look Like?', col2X + 4, threeY, true);
+            drawList(bullets, col2X + 4, threeY, colWidth - 8, false, 3);
+
+            // ---- Column 3: Marketing Strategy ----
             let y3 = startY;
 
-            // Target Market (Col 3)
+            // Target Market
             const tmItems = (vtoData.targetMarket || []).filter(t => t && t.trim());
-            const tmHeight = Math.max(35, tmItems.length * 4 + 15);
-            let tmY = drawSection('TARGET MARKET', col3X, y3, colWidth, tmHeight);
-            tmY = drawLabel('Demographics, Geographics, Psychographics', col3X + 2, tmY);
-            drawList(tmItems, col3X + 2, tmY, colWidth - 4);
-            y3 += tmHeight + 2;
+            const tmHeight = Math.max(35, tmItems.length * 3.5 + 16);
+            let tmY = drawModernSection('Target Market', col3X, y3, colWidth, tmHeight);
+            tmY = drawLabel('Demographics, Geographics, Psychographics', col3X + 4, tmY);
+            drawList(tmItems, col3X + 4, tmY, colWidth - 8, false, 3);
+            y3 += tmHeight + 3;
 
-            // Three Uniques (Col 3)
+            // Three Uniques
             const tuItems = (vtoData.threeUniques || []).filter(t => t && t.trim());
-            const tuHeight = Math.max(35, tuItems.length * 4 + 12);
-            let tuY = drawSection('THREE UNIQUES', col3X, y3, colWidth, tuHeight);
-            drawList(tuItems, col3X + 2, tuY, colWidth - 4, true);
-            y3 += tuHeight + 2;
+            const tuHeight = Math.max(35, tuItems.length * 3.5 + 12);
+            let tuY = drawModernSection('Three Uniques', col3X, y3, colWidth, tuHeight);
+            drawList(tuItems, col3X + 4, tuY, colWidth - 8, true, 3);
+            y3 += tuHeight + 3;
 
-            // Proven Process (Col 3)
-            const ppHeight = 20;
-            let ppY = drawSection('PROVEN PROCESS', col3X, y3, colWidth, ppHeight);
-            drawText(vtoData.provenProcess || '', col3X + 2, ppY, colWidth - 4);
+            // Proven Process
+            const ppHeight = availHeight - tmHeight - tuHeight - 6;
+            let ppY = drawModernSection('Proven Process', col3X, y3, colWidth, Math.max(ppHeight, 20));
+            drawText(vtoData.provenProcess || '', col3X + 4, ppY, colWidth - 8, 8);
 
-            // Column 4: Guarantee
+            // ---- Column 4: Guarantee ----
             let y4 = startY;
-            const gHeight = 30;
-            let gY = drawSection('GUARANTEE', col4X, y4, colWidth, gHeight);
-            drawText(vtoData.guarantee || '', col4X + 2, gY, colWidth - 4);
+            const gHeight = availHeight;
+            let gY = drawModernSection('Guarantee', col4X, y4, colWidth, gHeight);
+            drawText(vtoData.guarantee || '', col4X + 4, gY, colWidth - 8, 8);
 
-            // Footer
-            doc.setTextColor(...medGray);
-            doc.setFontSize(6);
-            doc.text('Generated with VTO Builder', pageWidth / 2, pageHeight - 3, { align: 'center' });
-            if (vtoData.vtoDate) {
-                doc.text(toAscii('VTO Date: ' + formatDate(vtoData.vtoDate)), margin, pageHeight - 3);
-            }
+            drawPageFooter();
 
             // ==================== PAGE 2: TRACTION ====================
             doc.addPage([pageWidth, pageHeight], 'landscape');
-
-            // Main header
-            doc.setFillColor(...black);
-            doc.rect(0, 0, pageWidth, headerHeight, 'F');
-            doc.setTextColor(...white);
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.text('VISION/TRACTION ORGANIZER', pageWidth / 2, 7, { align: 'center' });
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'normal');
-            doc.text(companyDisplay, pageWidth / 2, 10.5, { align: 'center' });
-            doc.setFontSize(7);
-            doc.text('Page 2: TRACTION', pageWidth - margin, 7, { align: 'right' });
+            drawPageHeader(2, 'TRACTION');
 
             // 3-column layout for Traction
-            const tColWidth = (contentWidth - (colGap * 2)) / 3;
+            const tColGap = 4;
+            const tColWidth = (contentWidth - (tColGap * 2)) / 3;
             const tCol1X = margin;
-            const tCol2X = margin + tColWidth + colGap;
-            const tCol3X = margin + (tColWidth + colGap) * 2;
+            const tCol2X = margin + tColWidth + tColGap;
+            const tCol3X = margin + (tColWidth + tColGap) * 2;
 
-            // Column 1: 1-Year Plan
+            // ---- Column 1: 1-Year Plan ----
             y1 = startY;
             const goals = (vtoData.oneYearGoals || []).filter(g => g && g.trim());
-            const oneYearHeight = availHeight - 5;
-            let oyY = drawSection('1-YEAR PLAN', tCol1X, y1, tColWidth, oneYearHeight);
+            const oneYearHeight = availHeight;
+            let oyY = drawModernSection('1-Year Plan', tCol1X, y1, tColWidth, oneYearHeight);
 
             if (vtoData.oneYearDate) {
-                oyY = drawLabel('Date: ' + formatDate(vtoData.oneYearDate), tCol1X + 2, oyY);
-            }
-            if (vtoData.oneYearRevenue || vtoData.oneYearProfit) {
-                doc.setTextColor(...darkGray);
-                doc.setFontSize(8);
+                doc.setTextColor(...navy);
+                doc.setFontSize(9);
                 doc.setFont('helvetica', 'bold');
+                doc.text(toAscii(formatDate(vtoData.oneYearDate)), tCol1X + 4, oyY);
+                oyY += 5;
+            }
+
+            // Metrics
+            if (vtoData.oneYearRevenue || vtoData.oneYearProfit) {
+                const metricWidth = (tColWidth - 12) / 2;
                 if (vtoData.oneYearRevenue) {
-                    doc.text(toAscii('Revenue: ' + vtoData.oneYearRevenue), tCol1X + 2, oyY);
-                    oyY += 3;
+                    drawMetric('Revenue', vtoData.oneYearRevenue, tCol1X + 4, oyY, metricWidth);
                 }
                 if (vtoData.oneYearProfit) {
-                    doc.text(toAscii('Profit: ' + vtoData.oneYearProfit), tCol1X + 2, oyY);
-                    oyY += 3;
+                    drawMetric('Profit', vtoData.oneYearProfit, tCol1X + 4 + metricWidth + 2, oyY, metricWidth);
                 }
+                oyY += 11;
             }
+
+            // Theme
             if (vtoData.oneYearTheme) {
-                oyY += 1;
-                oyY = drawLabel('Theme: ' + vtoData.oneYearTheme, tCol1X + 2, oyY);
-            }
-            oyY += 1;
-            oyY = drawLabel('Goals', tCol1X + 2, oyY);
-            drawList(goals, tCol1X + 2, oyY, tColWidth - 4, true);
-
-            // Column 2: Quarterly Rocks
-            y2 = startY;
-            const rocksFiltered = (vtoData.rocks || []).filter(r => r && r.text && r.text.trim());
-            const rocksHeight = availHeight - 5;
-            let qrY = drawSection('QUARTERLY ROCKS', tCol2X, y2, tColWidth, rocksHeight);
-
-            if (vtoData.rocksDate) {
-                qrY = drawLabel('Quarter End: ' + formatDate(vtoData.rocksDate), tCol2X + 2, qrY);
-            }
-            if (vtoData.rocksRevenue || vtoData.rocksProfit) {
-                doc.setTextColor(...darkGray);
+                doc.setFillColor(...gold);
+                roundedRect(tCol1X + 4, oyY - 3, tColWidth - 8, 8, 2, 'F');
+                doc.setTextColor(...white);
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'bold');
+                doc.text(toAscii(vtoData.oneYearTheme), tCol1X + tColWidth / 2, oyY + 1, { align: 'center' });
+                oyY += 10;
+            }
+
+            oyY = drawLabel('Goals', tCol1X + 4, oyY, true);
+            drawList(goals, tCol1X + 4, oyY, tColWidth - 8, true, 3.2);
+
+            // ---- Column 2: Quarterly Rocks ----
+            y2 = startY;
+            const rocksFiltered = (vtoData.rocks || []).filter(r => r && r.text && r.text.trim());
+            const rocksHeight = availHeight;
+            let qrY = drawModernSection('Quarterly Rocks', tCol2X, y2, tColWidth, rocksHeight);
+
+            if (vtoData.rocksDate) {
+                doc.setTextColor(...navy);
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'bold');
+                doc.text(toAscii(formatDate(vtoData.rocksDate)), tCol2X + 4, qrY);
+                qrY += 5;
+            }
+
+            // Metrics
+            if (vtoData.rocksRevenue || vtoData.rocksProfit) {
+                const metricWidth = (tColWidth - 12) / 2;
                 if (vtoData.rocksRevenue) {
-                    doc.text(toAscii('Revenue: ' + vtoData.rocksRevenue), tCol2X + 2, qrY);
-                    qrY += 3;
+                    drawMetric('Revenue', vtoData.rocksRevenue, tCol2X + 4, qrY, metricWidth);
                 }
                 if (vtoData.rocksProfit) {
-                    doc.text(toAscii('Profit: ' + vtoData.rocksProfit), tCol2X + 2, qrY);
-                    qrY += 3;
+                    drawMetric('Profit', vtoData.rocksProfit, tCol2X + 4 + metricWidth + 2, qrY, metricWidth);
                 }
+                qrY += 11;
             }
-            if (vtoData.rocksTheme) {
-                qrY += 1;
-                qrY = drawLabel('Theme: ' + vtoData.rocksTheme, tCol2X + 2, qrY);
-            }
-            qrY += 1;
 
-            // Draw rocks with owners
-            doc.setTextColor(...darkGray);
-            doc.setFontSize(8);
+            // Theme
+            if (vtoData.rocksTheme) {
+                doc.setFillColor(...gold);
+                roundedRect(tCol2X + 4, qrY - 3, tColWidth - 8, 8, 2, 'F');
+                doc.setTextColor(...white);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'bold');
+                doc.text(toAscii(vtoData.rocksTheme), tCol2X + tColWidth / 2, qrY + 1, { align: 'center' });
+                qrY += 10;
+            }
+
+            // Draw rocks with owner badges
             rocksFiltered.forEach((rock, index) => {
-                const rockText = `${index + 1}. ${toAscii(rock.text)}`;
-                const ownerText = rock.owner ? ` (${toAscii(rock.owner)})` : '';
-                const lines = doc.splitTextToSize(rockText + ownerText, tColWidth - 6);
-                doc.text(lines, tCol2X + 2, qrY);
-                qrY += lines.length * 3 + 1;
+                // Rock number with gold accent
+                doc.setTextColor(...gold);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'bold');
+                doc.text(`${index + 1}.`, tCol2X + 4, qrY);
+
+                // Rock text
+                doc.setTextColor(...textDark);
+                doc.setFont('helvetica', 'normal');
+                const rockLines = doc.splitTextToSize(toAscii(rock.text), tColWidth - 40);
+                doc.text(rockLines, tCol2X + 10, qrY);
+
+                // Owner badge
+                if (rock.owner) {
+                    doc.setFillColor(...navy);
+                    const ownerText = toAscii(rock.owner);
+                    const ownerWidth = doc.getTextWidth(ownerText) + 4;
+                    roundedRect(tCol2X + tColWidth - ownerWidth - 4, qrY - 3, ownerWidth, 5, 1, 'F');
+                    doc.setTextColor(...white);
+                    doc.setFontSize(6);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(ownerText, tCol2X + tColWidth - 6, qrY, { align: 'right' });
+                }
+
+                qrY += rockLines.length * 3.2 + 2;
             });
 
-            // Column 3: Issues List
+            // ---- Column 3: Issues List ----
             y3 = startY;
             const issuesFiltered = (vtoData.issues || []).filter(i => i && i.text && i.text.trim());
-            const issuesHeight = availHeight - 5;
-            let issY = drawSection('ISSUES LIST', tCol3X, y3, tColWidth, issuesHeight);
+            const issuesHeight = availHeight;
+            let issY = drawModernSection('Issues List', tCol3X, y3, tColWidth, issuesHeight);
 
-            doc.setFontSize(8);
+            // Draw issues with status badges
             issuesFiltered.forEach((issue, index) => {
-                doc.setTextColor(...darkGray);
-                const issueText = `${index + 1}. ${toAscii(issue.text)}`;
-                const lines = doc.splitTextToSize(issueText, tColWidth - 25);
-                doc.text(lines, tCol3X + 2, issY);
+                // Issue number
+                doc.setTextColor(...gold);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'bold');
+                doc.text(`${index + 1}.`, tCol3X + 4, issY);
 
+                // Issue text
+                doc.setTextColor(...textDark);
+                doc.setFont('helvetica', 'normal');
+                const issueLines = doc.splitTextToSize(toAscii(issue.text), tColWidth - 35);
+                doc.text(issueLines, tCol3X + 10, issY);
+
+                // Status badge with colors
                 if (issue.status) {
-                    doc.setFontSize(6);
-                    let statusColor;
+                    let statusColor, statusBg;
                     switch(issue.status) {
-                        case 'DONE': statusColor = [16, 185, 129]; break;
-                        case 'IN PROGRESS': statusColor = [245, 158, 11]; break;
-                        case 'NEED': statusColor = [239, 68, 68]; break;
-                        default: statusColor = medGray;
+                        case 'DONE':
+                            statusBg = [16, 185, 129]; // Green
+                            statusColor = white;
+                            break;
+                        case 'IN PROGRESS':
+                            statusBg = [245, 158, 11]; // Amber
+                            statusColor = white;
+                            break;
+                        case 'NEED':
+                            statusBg = [239, 68, 68]; // Red
+                            statusColor = white;
+                            break;
+                        default:
+                            statusBg = borderLight;
+                            statusColor = textMuted;
                     }
+                    const statusText = issue.status;
+                    const statusWidth = doc.getTextWidth(statusText) * 0.8 + 4;
+                    doc.setFillColor(...statusBg);
+                    roundedRect(tCol3X + tColWidth - statusWidth - 4, issY - 3, statusWidth, 5, 1, 'F');
                     doc.setTextColor(...statusColor);
+                    doc.setFontSize(5);
                     doc.setFont('helvetica', 'bold');
-                    doc.text(issue.status, tCol3X + tColWidth - 3, issY, { align: 'right' });
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(8);
+                    doc.text(statusText, tCol3X + tColWidth - 6, issY - 0.5, { align: 'right' });
                 }
-                issY += lines.length * 3 + 2;
+
+                issY += issueLines.length * 3.2 + 2;
             });
 
-            // Footer
-            doc.setTextColor(...medGray);
-            doc.setFontSize(6);
-            doc.text('Generated with VTO Builder', pageWidth / 2, pageHeight - 3, { align: 'center' });
-            if (vtoData.vtoDate) {
-                doc.text(toAscii('VTO Date: ' + formatDate(vtoData.vtoDate)), margin, pageHeight - 3);
-            }
+            drawPageFooter();
 
             // Save with sanitized filename
             const safeName = sanitizeFilename(vtoData.companyName);

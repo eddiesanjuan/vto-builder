@@ -1,0 +1,71 @@
+{
+  "companyName": "E.F. San Juan - Back-End Operations",
+  "vtoDate": "2026-02-04",
+  "coreValues": [
+    "Act like an owner",
+    "It's all in the details",
+    "Guided by the Golden Rule",
+    "We are Family"
+  ],
+  "purpose": "Expertly designed and crafted custom woodwork - executed with precision, coordination, and pro-active risk management",
+  "niche": "Heritage Complex Custom Millwork",
+  "tenYearDate": "2034-12-31",
+  "tenYearTarget": "[MANAGER INPUT NEEDED: What does Back-End Ops look like when the company hits $100M+?]",
+  "threeYearDate": "2028-12-31",
+  "threeYearRevenue": "",
+  "threeYearProfit": "",
+  "threeYearBullets": [
+    "Spotless equipment, vehicles, and facilities...always",
+    "Lean culture focused on improving quality & growing our people",
+    "Maximized use of software & technology",
+    "ERP fully implemented with real-time visibility",
+    "Real-time inventory system",
+    "Job costing (ability to show revenue and cost per job)",
+    "Core Processes and procedures documented & FBA",
+    "Robust training system & dedicated facility",
+    "Labeling system for parts/finished products",
+    "[ADD MORE - What does world-class Back-End Ops look like in 3 years?]"
+  ],
+  "targetMarket": [
+    "Internal Customer: Sales, Engineering, and Front Office teams",
+    "External Customer: Contractors, architects building custom luxury homes > $10M",
+    "[Who does Back-End Ops serve? What do they need from us?]"
+  ],
+  "threeUniques": [
+    "[What makes EFSJ Back-End Ops different/better than competitors?]",
+    "[What do we do that others can't or won't?]",
+    "[What would customers miss most if we were gone?]"
+  ],
+  "provenProcess": "[Document the Back-End Ops workflow: Order received → Production → QC → Shipping]",
+  "guarantee": "Everything we make is guaranteed for life.",
+  "oneYearDate": "2026-12-31",
+  "oneYearRevenue": "",
+  "oneYearProfit": "",
+  "oneYearGoals": [
+    "Full development and implementation of ERP (Back-End modules)",
+    "Inventory Management System operational",
+    "Job costing data accurate and accessible",
+    "[ADD: What must Back-End Ops accomplish this year to support $36.3M revenue?]"
+  ],
+  "oneYearTheme": "Solve...Sell...Save!",
+  "rocksDate": "2026-03-31",
+  "rocksRevenue": "",
+  "rocksProfit": "",
+  "rocks": [
+    { "text": "ERP Phase 2 - [Specific Back-End deliverables]", "owner": "[Owner]" },
+    { "text": "[Rock 2 - What's the #1 priority for Q1?]", "owner": "[Owner]" },
+    { "text": "[Rock 3 - What would make the biggest impact?]", "owner": "[Owner]" },
+    { "text": "[Rock 4 - Optional]", "owner": "[Owner]" }
+  ],
+  "rocksTheme": "Solve...Sell...Save!",
+  "issues": [
+    { "text": "Lack of Formal Training Programs", "status": "" },
+    { "text": "Inventory Management System*", "status": "" },
+    { "text": "Labeling System for Parts/Finished Products*", "status": "" },
+    { "text": "Get granular with our production descriptions (usable data)*", "status": "" },
+    { "text": "Heat solution for plants during colder months", "status": "" },
+    { "text": "[ADD: What's broken/frustrating in Back-End Ops right now?]", "status": "" },
+    { "text": "[ADD: What slows us down or causes rework?]", "status": "" },
+    { "text": "[ADD: What do we need but don't have?]", "status": "" }
+  ]
+}

@@ -13,8 +13,8 @@
         }
 
         :root {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
+            --primary: #8b2605;
+            --primary-dark: #6b1d04;
             --secondary: #64748b;
             --success: #10b981;
             --warning: #f59e0b;
@@ -260,7 +260,7 @@
         select:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            box-shadow: 0 0 0 3px rgba(139, 38, 5, 0.1);
         }
 
         textarea {
@@ -327,7 +327,7 @@
         }
 
         .btn-add:hover {
-            background: rgba(37, 99, 235, 0.05);
+            background: rgba(139, 38, 5, 0.05);
         }
 
         /* Rock Items with Owner */
@@ -1267,8 +1267,8 @@
             const cornerRadius = 3;
 
             // Premium Color Palette
-            const navy = [30, 58, 95];        // #1e3a5f - primary headers
-            const gold = [201, 162, 39];      // #c9a227 - accents
+            const deepRed = [139, 38, 5];     // #8b2605 - EFSJ primary headers
+            const darkBrown = [49, 41, 38];   // #312926 - EFSJ near-black
             const white = [255, 255, 255];
             const offWhite = [250, 250, 252]; // Subtle background
             const textDark = [31, 41, 55];    // Dark text
@@ -1290,7 +1290,7 @@
             // Helper: Draw modern section with rounded corners and elegant header
             function drawModernSection(title, x, y, width, height, opts = {}) {
                 const headerH = opts.headerHeight || 7;
-                const showGoldAccent = opts.goldAccent !== false;
+                const showDarkAccent = opts.darkAccent !== false;
 
                 // Section container with subtle border
                 doc.setFillColor(...white);
@@ -1298,16 +1298,16 @@
                 doc.setLineWidth(0.3);
                 roundedRect(x, y, width, height, cornerRadius, 'FD');
 
-                // Header background with gradient effect (navy bar)
-                doc.setFillColor(...navy);
+                // Header background with gradient effect (red header bar)
+                doc.setFillColor(...deepRed);
                 // Draw header with only top corners rounded
                 doc.roundedRect(x, y, width, headerH, cornerRadius, cornerRadius, 'F');
                 // Fill bottom part of header to make square bottom
                 doc.rect(x, y + cornerRadius, width, headerH - cornerRadius, 'F');
 
                 // Gold accent line under header
-                if (showGoldAccent) {
-                    doc.setFillColor(...gold);
+                if (showDarkAccent) {
+                    doc.setFillColor(...darkBrown);
                     doc.rect(x, y + headerH, width, 0.8, 'F');
                 }
 
@@ -1317,7 +1317,7 @@
                 doc.setFont('helvetica', 'bold');
                 doc.text(toAscii(title.toUpperCase()), x + 4, y + headerH - 2);
 
-                return y + headerH + (showGoldAccent ? 3.5 : 2.5);
+                return y + headerH + (showDarkAccent ? 3.5 : 2.5);
             }
 
             // Helper: Draw text with word wrap
@@ -1331,8 +1331,8 @@
             }
 
             // Helper: Draw elegant label
-            function drawLabel(text, x, y, useGold = false) {
-                doc.setTextColor(...(useGold ? gold : textMuted));
+            function drawLabel(text, x, y, useDark = false) {
+                doc.setTextColor(...(useDark ? darkBrown : textMuted));
                 doc.setFontSize(6.5);
                 doc.setFont('helvetica', 'bold');
                 doc.text(toAscii(text.toUpperCase()), x, y);
@@ -1348,8 +1348,8 @@
                 const filtered = (items || []).filter(item => item && String(item).trim());
                 filtered.forEach((item, index) => {
                     if (numbered) {
-                        // Draw number with gold accent
-                        doc.setTextColor(...gold);
+                        // Draw number with dark accent
+                        doc.setTextColor(...darkBrown);
                         doc.setFont('helvetica', 'bold');
                         doc.text(`${index + 1}.`, x, currentY);
                         doc.setTextColor(...textDark);
@@ -1359,7 +1359,7 @@
                         currentY += lines.length * lineHeight;
                     } else {
                         // Modern bullet point
-                        doc.setFillColor(...gold);
+                        doc.setFillColor(...darkBrown);
                         doc.circle(x + 1, currentY - 1, 0.6, 'F');
                         doc.setTextColor(...textDark);
                         const lines = doc.splitTextToSize(toAscii(item), maxWidth - 5);
@@ -1381,7 +1381,7 @@
                 doc.setFontSize(6);
                 doc.setFont('helvetica', 'normal');
                 doc.text(toAscii(label), x + 2, y);
-                doc.setTextColor(...navy);
+                doc.setTextColor(...deepRed);
                 doc.setFontSize(7);
                 doc.setFont('helvetica', 'bold');
                 doc.text(toAscii(value), x + 2, y + 3);
@@ -1391,11 +1391,11 @@
             // ==================== PAGE HEADER FUNCTION ====================
             function drawPageHeader(pageNum, pageTitle) {
                 // Full-width navy header
-                doc.setFillColor(...navy);
+                doc.setFillColor(...deepRed);
                 doc.rect(0, 0, pageWidth, headerHeight, 'F');
 
                 // Gold accent line at bottom of header
-                doc.setFillColor(...gold);
+                doc.setFillColor(...darkBrown);
                 doc.rect(0, headerHeight - 1.5, pageWidth, 1.5, 'F');
 
                 // Brand name - left aligned, prominent
@@ -1405,7 +1405,7 @@
                 doc.text('E.F. SAN JUAN', margin, 9);
 
                 // Tagline
-                doc.setTextColor(...gold);
+                doc.setTextColor(...darkBrown);
                 doc.setFontSize(7);
                 doc.setFont('helvetica', 'italic');
                 doc.text('Plan perfection, deliver excellence', margin, 13.5);
@@ -1425,7 +1425,7 @@
                 // Page indicator and quarter - right aligned
                 const quarterStr = getQuarterDisplay();
                 if (quarterStr) {
-                    doc.setTextColor(...gold);
+                    doc.setTextColor(...darkBrown);
                     doc.setFontSize(9);
                     doc.setFont('helvetica', 'bold');
                     doc.text(quarterStr, pageWidth - margin, 8, { align: 'right' });
@@ -1453,7 +1453,7 @@
                 }
 
                 // E.F. San Juan branding on right
-                doc.setTextColor(...navy);
+                doc.setTextColor(...deepRed);
                 doc.setFontSize(6);
                 doc.setFont('helvetica', 'bold');
                 doc.text('E.F. SAN JUAN', pageWidth - margin, footerY, { align: 'right' });
@@ -1485,7 +1485,7 @@
 
             // The Bar inline
             if (vtoData.theBar) {
-                doc.setTextColor(...gold);
+                doc.setTextColor(...darkBrown);
                 doc.setFontSize(6);
                 doc.setFont('helvetica', 'bold');
                 doc.text(toAscii('THE BAR: ' + vtoData.theBar), col1X + 4, cvY);
@@ -1508,7 +1508,7 @@
             const tenHeight = availHeight - (cvHeight + cfHeight + 6);
             let tenY = drawModernSection('10-Year Target', col1X, y1, colWidth, Math.max(tenHeight, 25));
             if (vtoData.tenYearDate) {
-                doc.setTextColor(...gold);
+                doc.setTextColor(...darkBrown);
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'bold');
                 doc.text(toAscii(formatDate(vtoData.tenYearDate)), col1X + 4, tenY);
@@ -1524,7 +1524,7 @@
 
             // Date and metrics
             if (vtoData.threeYearDate) {
-                doc.setTextColor(...navy);
+                doc.setTextColor(...deepRed);
                 doc.setFontSize(9);
                 doc.setFont('helvetica', 'bold');
                 doc.text(toAscii(formatDate(vtoData.threeYearDate)), col2X + 4, threeY);
@@ -1595,7 +1595,7 @@
             let oyY = drawModernSection('1-Year Plan', tCol1X, y1, tColWidth, oneYearHeight);
 
             if (vtoData.oneYearDate) {
-                doc.setTextColor(...navy);
+                doc.setTextColor(...deepRed);
                 doc.setFontSize(9);
                 doc.setFont('helvetica', 'bold');
                 doc.text(toAscii(formatDate(vtoData.oneYearDate)), tCol1X + 4, oyY);
@@ -1616,7 +1616,7 @@
 
             // Theme
             if (vtoData.oneYearTheme) {
-                doc.setFillColor(...gold);
+                doc.setFillColor(...darkBrown);
                 roundedRect(tCol1X + 4, oyY - 3, tColWidth - 8, 8, 2, 'F');
                 doc.setTextColor(...white);
                 doc.setFontSize(8);
@@ -1635,7 +1635,7 @@
             let qrY = drawModernSection('Quarterly Rocks', tCol2X, y2, tColWidth, rocksHeight);
 
             if (vtoData.rocksDate) {
-                doc.setTextColor(...navy);
+                doc.setTextColor(...deepRed);
                 doc.setFontSize(9);
                 doc.setFont('helvetica', 'bold');
                 doc.text(toAscii(formatDate(vtoData.rocksDate)), tCol2X + 4, qrY);
@@ -1656,7 +1656,7 @@
 
             // Theme
             if (vtoData.rocksTheme) {
-                doc.setFillColor(...gold);
+                doc.setFillColor(...darkBrown);
                 roundedRect(tCol2X + 4, qrY - 3, tColWidth - 8, 8, 2, 'F');
                 doc.setTextColor(...white);
                 doc.setFontSize(8);
@@ -1667,8 +1667,8 @@
 
             // Draw rocks with owner badges
             rocksFiltered.forEach((rock, index) => {
-                // Rock number with gold accent
-                doc.setTextColor(...gold);
+                // Rock number with dark accent
+                doc.setTextColor(...darkBrown);
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'bold');
                 doc.text(`${index + 1}.`, tCol2X + 4, qrY);
@@ -1681,7 +1681,7 @@
 
                 // Owner badge
                 if (rock.owner) {
-                    doc.setFillColor(...navy);
+                    doc.setFillColor(...deepRed);
                     const ownerText = toAscii(rock.owner);
                     const ownerWidth = doc.getTextWidth(ownerText) + 4;
                     roundedRect(tCol2X + tColWidth - ownerWidth - 4, qrY - 3, ownerWidth, 5, 1, 'F');
@@ -1703,7 +1703,7 @@
             // Draw issues with status badges
             issuesFiltered.forEach((issue, index) => {
                 // Issue number
-                doc.setTextColor(...gold);
+                doc.setTextColor(...darkBrown);
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'bold');
                 doc.text(`${index + 1}.`, tCol3X + 4, issY);

@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VTO Builder - Vision/Traction Organizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --radius: 8px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .logo span {
+            color: var(--text);
+            font-weight: 400;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--card-bg);
+            color: var(--text);
+            border-color: var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        /* Main Layout */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-light);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.15s ease;
+        }
+
+        .tab:hover {
+            color: var(--primary);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Cards/Sections */
+        .section {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .section-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            margin-top: 0.25rem;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.375rem;
+            color: var(--text);
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 0.625rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.9375rem;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Dynamic Lists */
+        .list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .list-item {
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-start;
+        }
+
+        .list-item input,
+        .list-item textarea {
+            flex: 1;
+        }
+
+        .list-item .item-number {
+            min-width: 1.75rem;
+            height: 2.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+
+        .list-item .btn-remove {
+            padding: 0.5rem;
+            color: var(--danger);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.15s ease;
+        }
+
+        .list-item .btn-remove:hover {
+            opacity: 1;
+        }
+
+        .btn-add {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            color: var(--primary);
+            background: transparent;
+            border: 1px dashed var(--primary);
+            border-radius: var(--radius);
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: all 0.15s ease;
+        }
+
+        .btn-add:hover {
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        /* Rock Items with Owner */
+        .rock-item {
+            display: grid;
+            grid-template-columns: 1.75rem 1fr 150px 32px;
+            gap: 0.5rem;
+            align-items: flex-start;
+        }
+
+        /* Issue Items with Status */
+        .issue-item {
+            display: grid;
+            grid-template-columns: 1.75rem 1fr 140px 32px;
+            gap: 0.5rem;
+            align-items: flex-start;
+        }
+
+        .issue-item select {
+            padding: 0.5rem;
+            font-size: 0.8125rem;
+        }
+
+        /* Company Info */
+        .company-section {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .company-section label {
+            color: rgba(255,255,255,0.9);
+        }
+
+        .company-section input {
+            background: rgba(255,255,255,0.95);
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            background: var(--text);
+            color: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: var(--success);
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        /* Hidden file input */
+        .file-input {
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                padding: 1rem;
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .header-actions {
+                justify-content: center;
+            }
+
+            main {
+                padding: 1rem;
+            }
+
+            .tabs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+
+            .tab {
+                padding: 0.5rem 1rem;
+                white-space: nowrap;
+            }
+
+            .rock-item,
+            .issue-item {
+                grid-template-columns: 1.5rem 1fr 32px;
+            }
+
+            .rock-item input:nth-child(3),
+            .issue-item select {
+                grid-column: 2 / 3;
+                grid-row: 2;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            header, .tabs, .btn {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">VTO<span>Builder</span></div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="saveToLocalStorage()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Save
+                </button>
+                <button class="btn btn-secondary" onclick="exportJSON()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Export JSON
+                </button>
+                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Import JSON
+                </button>
+                <input type="file" id="importFile" class="file-input" accept=".json" onchange="importJSON(event)">
+                <button class="btn btn-primary" onclick="exportPDF()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    Export PDF
+                </button>
+                <button class="btn btn-danger" onclick="clearAll()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    Clear
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Company Info -->
+        <div class="company-section">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="companyName">Company Name</label>
+                    <input type="text" id="companyName" placeholder="Your Company Name">
+                </div>
+                <div class="form-group">
+                    <label for="vtoDate">VTO Date</label>
+                    <input type="date" id="vtoDate">
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" data-tab="vision">Page 1: Vision</div>
+            <div class="tab" data-tab="traction">Page 2: Traction</div>
+        </div>
+
+        <!-- Vision Tab -->
+        <div id="vision" class="tab-content active">
+            <!-- Core Values -->
+            <div class="section">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Core Values</h2>
+                        <p class="section-subtitle">The 4-6 values that define your company culture</p>
+                    </div>
+                </div>
+                <div id="coreValuesList" class="list-container"></div>
+                <button class="btn-add" onclick="addListItem('coreValuesList', 'coreValues')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add Core Value
+                </button>
+            </div>
+
+            <!-- Core Focus -->
+            <div class="section">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Core Focus</h2>
+                        <p class="section-subtitle">Your purpose and niche</p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="purpose">Purpose / Cause / Passion</label>
+                    <textarea id="purpose" rows="2" placeholder="Why does your company exist?"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="niche">Our Niche</label>
+                    <textarea id="niche" rows="2" placeholder="What you do better than anyone"></textarea>
+                </div>
+            </div>
+
+            <!-- 10-Year Target -->
+            <div class="section">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">10-Year Target</h2>
+                        <p class="section-subtitle">Your long-term, ambitious goal (BHAG)</p>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tenYearDate">Target Date</label>
+                        <input type="date" id="tenYearDate">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="tenYearTarget">10-Year Target</label>
+                    <textarea id="tenYearTarget" rows="2" placeholder="Your Big Hairy Audacious Goal"></textarea>
+                </div>
+            </div>
+
+            <!-- 3-Year Picture -->
+            <div class="section">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">3-Year Picture</h2>
+                        <p class="section-subtitle">What does the company look like in 3 years?</p>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="threeYearDate">Future Date</label>
+                        <input type="date" id="threeYearDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="threeYearRevenue">Revenue</label>
+                        <input type="text" id="threeYearRevenue" placeholder="$X,XXX,XXX">
+                    </div>
+                    <div class="form-group">
+                        <label for="threeYearProfit">Profit</label>
+                        <input type="text" id="threeYearProfit" placeholder="$XXX,XXX or XX%">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>What Does It Look Like?</label>
+                    <div id="threeYearBulletsList" class="list-container"></div>
+                    <button class="btn-add" onclick="addListItem('threeYearBulletsList', 'threeYearBullets')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add Bullet Point
+                    </button>
+                </div>
+            </div>
+
+            <!-- Marketing Strategy -->
+            <div class="section">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Marketing Strategy</h2>
+                        <p class="section-subtitle">Your target market and differentiators</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Target Market</label>
+                    <p class="section-subtitle" style="margin-bottom: 0.75rem;">Demographics, Geographics, Psychographics</p>
+                    <div id="targetMarketList" class="list-container"></div>
+                    <button class="btn-add" onclick="addListItem('targetMarketList', 'targetMarket')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add Target Market
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <label>Three Uniques</label>
+                    <p class="section-subtitle" style="margin-bottom: 0.75rem;">What makes you different from competitors</p>
+                    <div id="threeUniquesList" class="list-container"></div>
+                    <button class="btn-add" onclick="addListItem('threeUniquesList', 'threeUniques')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add Unique
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <label for="provenProcess">Proven Process</label>
+                    <textarea id="provenProcess" rows="2" placeholder="Your proprietary process name or description"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="guarantee">Guarantee</label>
+                    <textarea id="guarantee" rows="2" placeholder="Your guarantee to customers"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Traction Tab -->
+        <div id="traction" class="tab-content">
+            <!-- 1-Year Plan -->
+            <div class="section">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">1-Year Plan</h2>
+                        <p class="section-subtitle">Goals and targets for the next 12 months</p>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="oneYearDate">Future Date</label>
+                        <input type="date" id="oneYearDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="oneYearRevenue">Revenue</label>
+                        <input type="text" id="oneYearRevenue" placeholder="$X,XXX,XXX">
+                    </div>
+                    <div class="form-group">
+                        <label for="oneYearProfit">Profit</label>
+                        <input type="text" id="oneYearProfit" placeholder="$XXX,XXX or XX%">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Goals for the Year</label>
+                    <div id="oneYearGoalsList" class="list-container"></div>
+                    <button class="btn-add" onclick="addListItem('oneYearGoalsList', 'oneYearGoals')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add Goal
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label for="oneYearTheme">Theme (Optional)</label>
+                    <input type="text" id="oneYearTheme" placeholder="e.g., 'Year of Growth'">
+                </div>
+            </div>
+
+            <!-- Quarterly Rocks -->
+            <div class="section">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Quarterly Rocks</h2>
+                        <p class="section-subtitle">3-7 most important things to accomplish this quarter</p>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="rocksDate">Quarter End Date</label>
+                        <input type="date" id="rocksDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="rocksRevenue">Revenue (Optional)</label>
+                        <input type="text" id="rocksRevenue" placeholder="$X,XXX,XXX">
+                    </div>
+                    <div class="form-group">
+                        <label for="rocksProfit">Profit (Optional)</label>
+                        <input type="text" id="rocksProfit" placeholder="$XXX,XXX or XX%">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Rocks</label>
+                    <div id="rocksList" class="list-container"></div>
+                    <button class="btn-add" onclick="addRockItem()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add Rock
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label for="rocksTheme">Theme (Optional)</label>
+                    <input type="text" id="rocksTheme" placeholder="e.g., 'Q1 Focus'">
+                </div>
+            </div>
+
+            <!-- Issues List -->
+            <div class="section">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Issues List (Parking Lot)</h2>
+                        <p class="section-subtitle">Long-term issues to be addressed</p>
+                    </div>
+                </div>
+                <div id="issuesList" class="list-container"></div>
+                <button class="btn-add" onclick="addIssueItem()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add Issue
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // Data structure
+        let vtoData = {
+            companyName: '',
+            vtoDate: '',
+            coreValues: [],
+            purpose: '',
+            niche: '',
+            tenYearDate: '',
+            tenYearTarget: '',
+            threeYearDate: '',
+            threeYearRevenue: '',
+            threeYearProfit: '',
+            threeYearBullets: [],
+            targetMarket: [],
+            threeUniques: [],
+            provenProcess: '',
+            guarantee: '',
+            oneYearDate: '',
+            oneYearRevenue: '',
+            oneYearProfit: '',
+            oneYearGoals: [],
+            oneYearTheme: '',
+            rocksDate: '',
+            rocksRevenue: '',
+            rocksProfit: '',
+            rocks: [],
+            rocksTheme: '',
+            issues: []
+        };
+
+        // Tab handling
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Initialize lists
+        function initializeLists() {
+            ['coreValues', 'threeYearBullets', 'targetMarket', 'threeUniques', 'oneYearGoals'].forEach(key => {
+                if (vtoData[key].length === 0) {
+                    vtoData[key] = [''];
+                }
+                renderList(key + 'List', key);
+            });
+
+            if (vtoData.rocks.length === 0) {
+                vtoData.rocks = [{ text: '', owner: '' }];
+            }
+            renderRocksList();
+
+            if (vtoData.issues.length === 0) {
+                vtoData.issues = [{ text: '', status: '' }];
+            }
+            renderIssuesList();
+        }
+
+        // Render simple list
+        function renderList(containerId, dataKey) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            vtoData[dataKey].forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                div.innerHTML = `
+                    <span class="item-number">${index + 1}.</span>
+                    <input type="text" value="${escapeHtml(item)}"
+                           onchange="updateListItem('${dataKey}', ${index}, this.value)"
+                           placeholder="Enter value...">
+                    <button class="btn-remove" onclick="removeListItem('${dataKey}', ${index}, '${containerId}')" title="Remove">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Render rocks list
+        function renderRocksList() {
+            const container = document.getElementById('rocksList');
+            container.innerHTML = '';
+
+            vtoData.rocks.forEach((rock, index) => {
+                const div = document.createElement('div');
+                div.className = 'rock-item';
+                div.innerHTML = `
+                    <span class="item-number">${index + 1}.</span>
+                    <input type="text" value="${escapeHtml(rock.text)}"
+                           onchange="updateRock(${index}, 'text', this.value)"
+                           placeholder="Rock description...">
+                    <input type="text" value="${escapeHtml(rock.owner)}"
+                           onchange="updateRock(${index}, 'owner', this.value)"
+                           placeholder="Owner">
+                    <button class="btn-remove" onclick="removeRock(${index})" title="Remove">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Render issues list
+        function renderIssuesList() {
+            const container = document.getElementById('issuesList');
+            container.innerHTML = '';
+
+            vtoData.issues.forEach((issue, index) => {
+                const div = document.createElement('div');
+                div.className = 'issue-item';
+                div.innerHTML = `
+                    <span class="item-number">${index + 1}.</span>
+                    <input type="text" value="${escapeHtml(issue.text)}"
+                           onchange="updateIssue(${index}, 'text', this.value)"
+                           placeholder="Issue description...">
+                    <select onchange="updateIssue(${index}, 'status', this.value)">
+                        <option value="" ${issue.status === '' ? 'selected' : ''}>No Status</option>
+                        <option value="IN PROGRESS" ${issue.status === 'IN PROGRESS' ? 'selected' : ''}>In Progress</option>
+                        <option value="DONE" ${issue.status === 'DONE' ? 'selected' : ''}>Done</option>
+                        <option value="NEED" ${issue.status === 'NEED' ? 'selected' : ''}>Need</option>
+                    </select>
+                    <button class="btn-remove" onclick="removeIssue(${index})" title="Remove">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // List operations
+        function addListItem(containerId, dataKey) {
+            vtoData[dataKey].push('');
+            renderList(containerId, dataKey);
+            // Focus the new input
+            const container = document.getElementById(containerId);
+            const inputs = container.querySelectorAll('input');
+            inputs[inputs.length - 1].focus();
+        }
+
+        function updateListItem(dataKey, index, value) {
+            vtoData[dataKey][index] = value;
+        }
+
+        function removeListItem(dataKey, index, containerId) {
+            if (vtoData[dataKey].length > 1) {
+                vtoData[dataKey].splice(index, 1);
+                renderList(containerId, dataKey);
+            }
+        }
+
+        // Rock operations
+        function addRockItem() {
+            vtoData.rocks.push({ text: '', owner: '' });
+            renderRocksList();
+            const container = document.getElementById('rocksList');
+            const inputs = container.querySelectorAll('input[placeholder="Rock description..."]');
+            inputs[inputs.length - 1].focus();
+        }
+
+        function updateRock(index, field, value) {
+            vtoData.rocks[index][field] = value;
+        }
+
+        function removeRock(index) {
+            if (vtoData.rocks.length > 1) {
+                vtoData.rocks.splice(index, 1);
+                renderRocksList();
+            }
+        }
+
+        // Issue operations
+        function addIssueItem() {
+            vtoData.issues.push({ text: '', status: '' });
+            renderIssuesList();
+            const container = document.getElementById('issuesList');
+            const inputs = container.querySelectorAll('input');
+            inputs[inputs.length - 1].focus();
+        }
+
+        function updateIssue(index, field, value) {
+            vtoData.issues[index][field] = value;
+        }
+
+        function removeIssue(index) {
+            if (vtoData.issues.length > 1) {
+                vtoData.issues.splice(index, 1);
+                renderIssuesList();
+            }
+        }
+
+        // Collect form data
+        function collectFormData() {
+            vtoData.companyName = document.getElementById('companyName').value;
+            vtoData.vtoDate = document.getElementById('vtoDate').value;
+            vtoData.purpose = document.getElementById('purpose').value;
+            vtoData.niche = document.getElementById('niche').value;
+            vtoData.tenYearDate = document.getElementById('tenYearDate').value;
+            vtoData.tenYearTarget = document.getElementById('tenYearTarget').value;
+            vtoData.threeYearDate = document.getElementById('threeYearDate').value;
+            vtoData.threeYearRevenue = document.getElementById('threeYearRevenue').value;
+            vtoData.threeYearProfit = document.getElementById('threeYearProfit').value;
+            vtoData.provenProcess = document.getElementById('provenProcess').value;
+            vtoData.guarantee = document.getElementById('guarantee').value;
+            vtoData.oneYearDate = document.getElementById('oneYearDate').value;
+            vtoData.oneYearRevenue = document.getElementById('oneYearRevenue').value;
+            vtoData.oneYearProfit = document.getElementById('oneYearProfit').value;
+            vtoData.oneYearTheme = document.getElementById('oneYearTheme').value;
+            vtoData.rocksDate = document.getElementById('rocksDate').value;
+            vtoData.rocksRevenue = document.getElementById('rocksRevenue').value;
+            vtoData.rocksProfit = document.getElementById('rocksProfit').value;
+            vtoData.rocksTheme = document.getElementById('rocksTheme').value;
+        }
+
+        // Populate form from data
+        function populateForm() {
+            document.getElementById('companyName').value = vtoData.companyName || '';
+            document.getElementById('vtoDate').value = vtoData.vtoDate || '';
+            document.getElementById('purpose').value = vtoData.purpose || '';
+            document.getElementById('niche').value = vtoData.niche || '';
+            document.getElementById('tenYearDate').value = vtoData.tenYearDate || '';
+            document.getElementById('tenYearTarget').value = vtoData.tenYearTarget || '';
+            document.getElementById('threeYearDate').value = vtoData.threeYearDate || '';
+            document.getElementById('threeYearRevenue').value = vtoData.threeYearRevenue || '';
+            document.getElementById('threeYearProfit').value = vtoData.threeYearProfit || '';
+            document.getElementById('provenProcess').value = vtoData.provenProcess || '';
+            document.getElementById('guarantee').value = vtoData.guarantee || '';
+            document.getElementById('oneYearDate').value = vtoData.oneYearDate || '';
+            document.getElementById('oneYearRevenue').value = vtoData.oneYearRevenue || '';
+            document.getElementById('oneYearProfit').value = vtoData.oneYearProfit || '';
+            document.getElementById('oneYearTheme').value = vtoData.oneYearTheme || '';
+            document.getElementById('rocksDate').value = vtoData.rocksDate || '';
+            document.getElementById('rocksRevenue').value = vtoData.rocksRevenue || '';
+            document.getElementById('rocksProfit').value = vtoData.rocksProfit || '';
+            document.getElementById('rocksTheme').value = vtoData.rocksTheme || '';
+            initializeLists();
+        }
+
+        // Save to localStorage
+        function saveToLocalStorage() {
+            collectFormData();
+            localStorage.setItem('vtoData', JSON.stringify(vtoData));
+            showToast('Saved to browser storage', 'success');
+        }
+
+        // Load from localStorage
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('vtoData');
+            if (saved) {
+                try {
+                    vtoData = JSON.parse(saved);
+                    populateForm();
+                } catch (e) {
+                    console.error('Error loading saved data:', e);
+                }
+            } else {
+                initializeLists();
+            }
+        }
+
+        // Export JSON
+        function exportJSON() {
+            collectFormData();
+            const dataStr = JSON.stringify(vtoData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `VTO-${vtoData.companyName || 'export'}-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('JSON exported', 'success');
+        }
+
+        // Import JSON
+        function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    vtoData = JSON.parse(e.target.result);
+                    populateForm();
+                    showToast('VTO imported successfully', 'success');
+                } catch (err) {
+                    showToast('Invalid JSON file', 'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // Clear all
+        function clearAll() {
+            if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+                vtoData = {
+                    companyName: '',
+                    vtoDate: '',
+                    coreValues: [''],
+                    purpose: '',
+                    niche: '',
+                    tenYearDate: '',
+                    tenYearTarget: '',
+                    threeYearDate: '',
+                    threeYearRevenue: '',
+                    threeYearProfit: '',
+                    threeYearBullets: [''],
+                    targetMarket: [''],
+                    threeUniques: [''],
+                    provenProcess: '',
+                    guarantee: '',
+                    oneYearDate: '',
+                    oneYearRevenue: '',
+                    oneYearProfit: '',
+                    oneYearGoals: [''],
+                    oneYearTheme: '',
+                    rocksDate: '',
+                    rocksRevenue: '',
+                    rocksProfit: '',
+                    rocks: [{ text: '', owner: '' }],
+                    rocksTheme: '',
+                    issues: [{ text: '', status: '' }]
+                };
+                populateForm();
+                localStorage.removeItem('vtoData');
+                showToast('All data cleared', 'success');
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Helper function
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        // Format date for display
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        }
+
+        // PDF Export
+        function exportPDF() {
+            collectFormData();
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'letter'
+            });
+
+            const pageWidth = 215.9;
+            const pageHeight = 279.4;
+            const margin = 15;
+            const contentWidth = pageWidth - (margin * 2);
+            const colWidth = (contentWidth - 5) / 2;
+
+            // Colors
+            const headerBg = [37, 99, 235];
+            const sectionBg = [241, 245, 249];
+            const textDark = [30, 41, 59];
+            const textLight = [100, 116, 139];
+
+            // Helper functions
+            function drawSectionHeader(text, x, y, width) {
+                doc.setFillColor(...headerBg);
+                doc.rect(x, y, width, 7, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.text(text, x + 3, y + 5);
+                return y + 9;
+            }
+
+            function drawSectionBox(x, y, width, height) {
+                doc.setFillColor(...sectionBg);
+                doc.setDrawColor(226, 232, 240);
+                doc.rect(x, y, width, height, 'FD');
+            }
+
+            function drawText(text, x, y, maxWidth, fontSize = 9, isBold = false) {
+                doc.setTextColor(...textDark);
+                doc.setFontSize(fontSize);
+                doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+
+                if (maxWidth) {
+                    const lines = doc.splitTextToSize(text, maxWidth);
+                    doc.text(lines, x, y);
+                    return y + (lines.length * (fontSize * 0.4));
+                } else {
+                    doc.text(text, x, y);
+                    return y + (fontSize * 0.4);
+                }
+            }
+
+            function drawLabel(text, x, y) {
+                doc.setTextColor(...textLight);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'bold');
+                doc.text(text, x, y);
+                return y + 4;
+            }
+
+            function drawList(items, x, y, maxWidth, numbered = true) {
+                doc.setTextColor(...textDark);
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+
+                let currentY = y;
+                items.filter(item => item && item.trim()).forEach((item, index) => {
+                    const prefix = numbered ? `${index + 1}. ` : '• ';
+                    const lines = doc.splitTextToSize(prefix + item, maxWidth - 5);
+                    doc.text(lines, x, currentY);
+                    currentY += lines.length * 3.5;
+                });
+                return currentY;
+            }
+
+            // ==================== PAGE 1: VISION ====================
+
+            // Header
+            doc.setFillColor(...headerBg);
+            doc.rect(0, 0, pageWidth, 20, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text('VISION/TRACTION ORGANIZER', pageWidth / 2, 10, { align: 'center' });
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(vtoData.companyName || 'Company Name', pageWidth / 2, 16, { align: 'center' });
+
+            // Page 1 indicator
+            doc.setFontSize(8);
+            doc.text('Page 1 of 2 - VISION', pageWidth - margin, 16, { align: 'right' });
+
+            let leftY = 25;
+            let rightY = 25;
+            const leftX = margin;
+            const rightX = margin + colWidth + 5;
+
+            // LEFT COLUMN - Page 1
+
+            // Core Values
+            leftY = drawSectionHeader('CORE VALUES', leftX, leftY, colWidth);
+            const cvItems = vtoData.coreValues.filter(v => v && v.trim());
+            const cvHeight = Math.max(25, cvItems.length * 5 + 5);
+            drawSectionBox(leftX, leftY, colWidth, cvHeight);
+            leftY = drawList(cvItems, leftX + 3, leftY + 5, colWidth - 6);
+            leftY += 5;
+
+            // Core Focus
+            leftY = drawSectionHeader('CORE FOCUS', leftX, leftY, colWidth);
+            const cfHeight = 35;
+            drawSectionBox(leftX, leftY, colWidth, cfHeight);
+            let cfY = leftY + 5;
+            cfY = drawLabel('Purpose / Cause / Passion:', leftX + 3, cfY);
+            cfY = drawText(vtoData.purpose || '', leftX + 3, cfY, colWidth - 6);
+            cfY += 3;
+            cfY = drawLabel('Our Niche:', leftX + 3, cfY);
+            drawText(vtoData.niche || '', leftX + 3, cfY, colWidth - 6);
+            leftY += cfHeight + 2;
+
+            // 10-Year Target
+            leftY = drawSectionHeader('10-YEAR TARGET', leftX, leftY, colWidth);
+            const tenHeight = 25;
+            drawSectionBox(leftX, leftY, colWidth, tenHeight);
+            let tenY = leftY + 5;
+            if (vtoData.tenYearDate) {
+                tenY = drawLabel('Target Date: ' + formatDate(vtoData.tenYearDate), leftX + 3, tenY);
+            }
+            drawText(vtoData.tenYearTarget || '', leftX + 3, tenY, colWidth - 6);
+            leftY += tenHeight + 2;
+
+            // 3-Year Picture
+            leftY = drawSectionHeader('3-YEAR PICTURE', leftX, leftY, colWidth);
+            const bullets = vtoData.threeYearBullets.filter(b => b && b.trim());
+            const threeHeight = Math.max(50, 25 + bullets.length * 5);
+            drawSectionBox(leftX, leftY, colWidth, threeHeight);
+            let threeY = leftY + 5;
+            if (vtoData.threeYearDate) {
+                threeY = drawLabel('Date: ' + formatDate(vtoData.threeYearDate), leftX + 3, threeY);
+            }
+            if (vtoData.threeYearRevenue || vtoData.threeYearProfit) {
+                const metrics = [];
+                if (vtoData.threeYearRevenue) metrics.push('Revenue: ' + vtoData.threeYearRevenue);
+                if (vtoData.threeYearProfit) metrics.push('Profit: ' + vtoData.threeYearProfit);
+                threeY = drawText(metrics.join('   |   '), leftX + 3, threeY, colWidth - 6, 9, true);
+                threeY += 2;
+            }
+            threeY = drawLabel('What Does It Look Like?', leftX + 3, threeY);
+            drawList(bullets, leftX + 3, threeY, colWidth - 6, false);
+            leftY += threeHeight + 2;
+
+            // RIGHT COLUMN - Page 1
+
+            // Marketing Strategy
+            rightY = drawSectionHeader('MARKETING STRATEGY', rightX, rightY, colWidth);
+
+            // Target Market
+            const tmItems = vtoData.targetMarket.filter(t => t && t.trim());
+            rightY = drawLabel('Target Market', rightX + 3, rightY + 4);
+            const tmHeight = Math.max(20, tmItems.length * 5 + 5);
+            drawSectionBox(rightX, rightY, colWidth, tmHeight);
+            rightY = drawList(tmItems, rightX + 3, rightY + 5, colWidth - 6, false);
+            rightY += 5;
+
+            // Three Uniques
+            const tuItems = vtoData.threeUniques.filter(t => t && t.trim());
+            rightY = drawLabel('Three Uniques', rightX + 3, rightY);
+            const tuHeight = Math.max(20, tuItems.length * 5 + 5);
+            drawSectionBox(rightX, rightY, colWidth, tuHeight);
+            rightY = drawList(tuItems, rightX + 3, rightY + 5, colWidth - 6);
+            rightY += 5;
+
+            // Proven Process
+            rightY = drawLabel('Proven Process', rightX + 3, rightY);
+            const ppHeight = 15;
+            drawSectionBox(rightX, rightY, colWidth, ppHeight);
+            drawText(vtoData.provenProcess || '', rightX + 3, rightY + 5, colWidth - 6);
+            rightY += ppHeight + 3;
+
+            // Guarantee
+            rightY = drawLabel('Guarantee', rightX + 3, rightY);
+            const gHeight = 15;
+            drawSectionBox(rightX, rightY, colWidth, gHeight);
+            drawText(vtoData.guarantee || '', rightX + 3, rightY + 5, colWidth - 6);
+            rightY += gHeight + 3;
+
+            // Footer
+            doc.setTextColor(...textLight);
+            doc.setFontSize(8);
+            doc.text('Generated with VTO Builder', pageWidth / 2, pageHeight - 8, { align: 'center' });
+            if (vtoData.vtoDate) {
+                doc.text('VTO Date: ' + formatDate(vtoData.vtoDate), margin, pageHeight - 8);
+            }
+
+            // ==================== PAGE 2: TRACTION ====================
+            doc.addPage();
+
+            // Header
+            doc.setFillColor(...headerBg);
+            doc.rect(0, 0, pageWidth, 20, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text('VISION/TRACTION ORGANIZER', pageWidth / 2, 10, { align: 'center' });
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(vtoData.companyName || 'Company Name', pageWidth / 2, 16, { align: 'center' });
+
+            // Page 2 indicator
+            doc.setFontSize(8);
+            doc.text('Page 2 of 2 - TRACTION', pageWidth - margin, 16, { align: 'right' });
+
+            leftY = 25;
+            rightY = 25;
+
+            // LEFT COLUMN - Page 2
+
+            // 1-Year Plan
+            leftY = drawSectionHeader('1-YEAR PLAN', leftX, leftY, colWidth);
+            const goals = vtoData.oneYearGoals.filter(g => g && g.trim());
+            const oneYearHeight = Math.max(60, 30 + goals.length * 5);
+            drawSectionBox(leftX, leftY, colWidth, oneYearHeight);
+            let oyY = leftY + 5;
+
+            if (vtoData.oneYearDate) {
+                oyY = drawLabel('Date: ' + formatDate(vtoData.oneYearDate), leftX + 3, oyY);
+            }
+            if (vtoData.oneYearRevenue || vtoData.oneYearProfit) {
+                const metrics = [];
+                if (vtoData.oneYearRevenue) metrics.push('Revenue: ' + vtoData.oneYearRevenue);
+                if (vtoData.oneYearProfit) metrics.push('Profit: ' + vtoData.oneYearProfit);
+                oyY = drawText(metrics.join('   |   '), leftX + 3, oyY, colWidth - 6, 9, true);
+                oyY += 3;
+            }
+            if (vtoData.oneYearTheme) {
+                oyY = drawLabel('Theme: ' + vtoData.oneYearTheme, leftX + 3, oyY);
+            }
+            oyY = drawLabel('Goals:', leftX + 3, oyY);
+            drawList(goals, leftX + 3, oyY, colWidth - 6);
+            leftY += oneYearHeight + 2;
+
+            // Quarterly Rocks
+            leftY = drawSectionHeader('QUARTERLY ROCKS', leftX, leftY, colWidth);
+            const rocksFiltered = vtoData.rocks.filter(r => r.text && r.text.trim());
+            const rocksHeight = Math.max(60, 30 + rocksFiltered.length * 6);
+            drawSectionBox(leftX, leftY, colWidth, rocksHeight);
+            let qrY = leftY + 5;
+
+            if (vtoData.rocksDate) {
+                qrY = drawLabel('Quarter End: ' + formatDate(vtoData.rocksDate), leftX + 3, qrY);
+            }
+            if (vtoData.rocksRevenue || vtoData.rocksProfit) {
+                const metrics = [];
+                if (vtoData.rocksRevenue) metrics.push('Revenue: ' + vtoData.rocksRevenue);
+                if (vtoData.rocksProfit) metrics.push('Profit: ' + vtoData.rocksProfit);
+                qrY = drawText(metrics.join('   |   '), leftX + 3, qrY, colWidth - 6, 9, true);
+                qrY += 2;
+            }
+            if (vtoData.rocksTheme) {
+                qrY = drawLabel('Theme: ' + vtoData.rocksTheme, leftX + 3, qrY);
+            }
+
+            // Draw rocks with owners
+            doc.setTextColor(...textDark);
+            doc.setFontSize(9);
+            rocksFiltered.forEach((rock, index) => {
+                const rockText = `${index + 1}. ${rock.text}`;
+                const ownerText = rock.owner ? ` (${rock.owner})` : '';
+                const lines = doc.splitTextToSize(rockText + ownerText, colWidth - 8);
+                doc.text(lines, leftX + 3, qrY);
+                qrY += lines.length * 3.5;
+            });
+            leftY += rocksHeight + 2;
+
+            // RIGHT COLUMN - Page 2
+
+            // Issues List
+            rightY = drawSectionHeader('ISSUES LIST (PARKING LOT)', rightX, rightY, colWidth);
+            const issuesFiltered = vtoData.issues.filter(i => i.text && i.text.trim());
+            const issuesHeight = Math.max(100, issuesFiltered.length * 8 + 10);
+            drawSectionBox(rightX, rightY, colWidth, issuesHeight);
+            let issY = rightY + 5;
+
+            doc.setFontSize(9);
+            issuesFiltered.forEach((issue, index) => {
+                doc.setTextColor(...textDark);
+                const issueText = `${index + 1}. ${issue.text}`;
+                const lines = doc.splitTextToSize(issueText, colWidth - 30);
+                doc.text(lines, rightX + 3, issY);
+
+                if (issue.status) {
+                    doc.setFontSize(7);
+                    let statusColor;
+                    switch(issue.status) {
+                        case 'DONE': statusColor = [16, 185, 129]; break;
+                        case 'IN PROGRESS': statusColor = [245, 158, 11]; break;
+                        case 'NEED': statusColor = [239, 68, 68]; break;
+                        default: statusColor = textLight;
+                    }
+                    doc.setTextColor(...statusColor);
+                    doc.text(issue.status, rightX + colWidth - 5, issY, { align: 'right' });
+                    doc.setFontSize(9);
+                }
+                issY += lines.length * 3.5 + 2;
+            });
+
+            // Footer
+            doc.setTextColor(...textLight);
+            doc.setFontSize(8);
+            doc.text('Generated with VTO Builder', pageWidth / 2, pageHeight - 8, { align: 'center' });
+            if (vtoData.vtoDate) {
+                doc.text('VTO Date: ' + formatDate(vtoData.vtoDate), margin, pageHeight - 8);
+            }
+
+            // Save
+            doc.save(`VTO-${vtoData.companyName || 'export'}-${new Date().toISOString().split('T')[0]}.pdf`);
+            showToast('PDF exported successfully', 'success');
+        }
+
+        // Auto-save on input changes
+        document.addEventListener('input', () => {
+            collectFormData();
+        });
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set default VTO date to today
+            document.getElementById('vtoDate').valueAsDate = new Date();
+            loadFromLocalStorage();
+        });
+    </script>
+</body>
+</html>

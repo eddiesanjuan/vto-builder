@@ -1768,19 +1768,17 @@
             const tmItems = (vtoData.targetMarket || []).filter(t => t && t.trim());
             // Dynamic height calculation accounting for text wrapping (bullet list)
             const tmContentHeight = measureListHeight(tmItems, colWidth - 8, { numbered: false, lineHeight: 3 });
-            const tmHeaderPadding = 20; // Section header + multi-line label padding
-            const tmHeight = Math.max(35, tmContentHeight + tmHeaderPadding);
+            const tmHeaderPadding = 15; // Section header + single-line label padding
+            const tmHeight = Math.max(30, tmContentHeight + tmHeaderPadding);
             let tmY = drawModernSection('Target Market', col3X, y3, colWidth, tmHeight);
             const tmSectionBottom = y3 + tmHeight - 3; // Bottom boundary
 
-            // Fix: Wrap the long Demographics label properly using smaller font
+            // Abbreviated demographics label to fit on one line
             doc.setTextColor(...darkBrown);
-            doc.setFontSize(5.5); // Smaller font to fit
+            doc.setFontSize(6);
             doc.setFont('helvetica', 'bold');
-            const demoLabel = 'DEMOGRAPHICS / GEOGRAPHICS / PSYCHOGRAPHICS';
-            const labelLines = doc.splitTextToSize(demoLabel, colWidth - 8);
-            doc.text(labelLines, col3X + 4, tmY);
-            tmY += labelLines.length * 2.5 + 1.5;
+            doc.text('DEMO / GEO / PSYCHO', col3X + 4, tmY);
+            tmY += 3.5;
 
             drawList(tmItems, col3X + 4, tmY, colWidth - 8, false, 3, tmSectionBottom);
             y3 += tmHeight + 3;
@@ -1790,25 +1788,31 @@
             // Dynamic height calculation accounting for text wrapping (numbered list)
             const tuContentHeight = measureListHeight(tuItems, colWidth - 8, { numbered: true, lineHeight: 3 });
             const tuHeaderPadding = 12; // Section header padding
-            const tuHeight = Math.max(35, tuContentHeight + tuHeaderPadding);
+            const tuHeight = Math.max(25, tuContentHeight + tuHeaderPadding);
             let tuY = drawModernSection('Three Uniques', col3X, y3, colWidth, tuHeight);
             const tuSectionBottom = y3 + tuHeight - 3; // Bottom boundary
             drawList(tuItems, col3X + 4, tuY, colWidth - 8, true, 3, tuSectionBottom);
             y3 += tuHeight + 3;
 
-            // Proven Process
-            const ppHeight = availHeight - tmHeight - tuHeight - 6;
-            const ppSectionHeight = Math.max(ppHeight, 20);
+            // Proven Process - sized to content (capped to remaining space)
+            const ppText = vtoData.provenProcess || '';
+            const ppContentHeight = measureTextHeight(ppText, colWidth - 8, 8);
+            const ppHeaderPadding = 12; // Section header padding
+            const ppRemainingSpace = availHeight - (y3 - startY); // Space left in column
+            const ppSectionHeight = Math.min(ppRemainingSpace, Math.max(25, ppContentHeight + ppHeaderPadding));
             let ppY = drawModernSection('Proven Process', col3X, y3, colWidth, ppSectionHeight);
             const ppSectionBottom = y3 + ppSectionHeight - 3; // Bottom boundary for overflow protection
-            drawText(vtoData.provenProcess || '', col3X + 4, ppY, colWidth - 8, 8, false, textDark, ppSectionBottom);
+            drawText(ppText, col3X + 4, ppY, colWidth - 8, 8, false, textDark, ppSectionBottom);
 
-            // ---- Column 4: Guarantee ----
+            // ---- Column 4: Guarantee ---- sized to content (small section at top)
             let y4 = startY;
-            const gHeight = availHeight;
+            const gText = vtoData.guarantee || '';
+            const gContentHeight = measureTextHeight(gText, colWidth - 8, 8);
+            const gHeaderPadding = 12; // Section header padding
+            const gHeight = Math.max(25, gContentHeight + gHeaderPadding);
             let gY = drawModernSection('Guarantee', col4X, y4, colWidth, gHeight);
             const guaranteeSectionBottom = y4 + gHeight - 3; // Bottom boundary
-            drawText(vtoData.guarantee || '', col4X + 4, gY, colWidth - 8, 8, false, textDark, guaranteeSectionBottom);
+            drawText(gText, col4X + 4, gY, colWidth - 8, 8, false, textDark, guaranteeSectionBottom);
 
             drawPageFooter();
 

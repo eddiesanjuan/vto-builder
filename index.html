@@ -1320,14 +1320,47 @@
                 return y + headerH + (showDarkAccent ? 3.5 : 2.5);
             }
 
-            // Helper: Draw text with word wrap
-            function drawText(text, x, y, maxWidth, fontSize = 8, isBold = false, color = textDark) {
+            // Helper: Draw text with word wrap and optional overflow protection
+            // maxY: if provided, stops rendering when yPos would exceed maxY and adds "..." indicator
+            function drawText(text, x, y, maxWidth, fontSize = 8, isBold = false, color = textDark, maxY = null) {
                 doc.setTextColor(...color);
                 doc.setFontSize(fontSize);
                 doc.setFont('helvetica', isBold ? 'bold' : 'normal');
                 const lines = doc.splitTextToSize(toAscii(text || ''), maxWidth);
-                doc.text(lines, x, y);
-                return y + (lines.length * (fontSize * 0.42));
+                const lineHeight = fontSize * 0.42;
+
+                // If no maxY provided, render all lines as before (backward compatible)
+                if (maxY === null) {
+                    doc.text(lines, x, y);
+                    return y + (lines.length * lineHeight);
+                }
+
+                // Overflow protection: render lines until we would exceed maxY
+                let currentY = y;
+
+                for (let i = 0; i < lines.length; i++) {
+                    const nextY = currentY + lineHeight;
+                    const hasMoreLines = i < lines.length - 1;
+
+                    // Check if we've already exceeded the boundary
+                    if (currentY > maxY) {
+                        break;
+                    }
+
+                    // Check if this is the last line we can fit and there are more lines
+                    if (hasMoreLines && nextY + lineHeight > maxY) {
+                        // Truncate this line and add ellipsis indicator
+                        doc.text(lines[i] + '...', x, currentY);
+                        currentY = nextY;
+                        break;
+                    }
+
+                    // Normal rendering
+                    doc.text(lines[i], x, currentY);
+                    currentY = nextY;
+                }
+
+                return currentY;
             }
 
             // Helper: Draw elegant label
@@ -1339,14 +1372,118 @@
                 return y + 3.5;
             }
 
-            // Helper: Draw bullet list with modern styling
-            function drawList(items, x, y, maxWidth, numbered = false, lineHeight = 3.2) {
+            // Helper: Pre-measure total height needed for a list with text wrapping
+            // This enables accurate section height calculations before drawing
+            function measureListHeight(items, maxWidth, options = {}) {
+                const {
+                    numbered = false,
+                    lineHeight = 3.2,
+                    fontSize = 8,
+                    itemSpacing = 0  // Additional spacing between items if needed
+                } = options;
+
+                // Filter empty items (consistent with drawList behavior)
+                const filtered = (items || []).filter(item => item && String(item).trim());
+
+                if (filtered.length === 0) {
+                    return 0;
+                }
+
+                // Set font to match drawList for accurate measurement
+                doc.setFontSize(fontSize);
+                doc.setFont('helvetica', 'normal');
+
+                // Calculate effective width (account for bullet/number indent)
+                const textWidth = numbered ? maxWidth - 6 : maxWidth - 5;
+
+                let totalHeight = 0;
+                filtered.forEach((item, index) => {
+                    // Use splitTextToSize to determine actual line count
+                    const lines = doc.splitTextToSize(toAscii(item), textWidth);
+                    totalHeight += lines.length * lineHeight;
+
+                    // Add spacing between items (but not after the last one)
+                    if (itemSpacing > 0 && index < filtered.length - 1) {
+                        totalHeight += itemSpacing;
+                    }
+                });
+
+                return totalHeight;
+            }
+
+            // Helper: Pre-measure height needed for wrapped text block
+            // Useful for measuring content areas like Purpose, Niche, etc.
+            function measureTextHeight(text, maxWidth, fontSize = 8) {
+                if (!text || !String(text).trim()) {
+                    return 0;
+                }
+
+                doc.setFontSize(fontSize);
+                doc.setFont('helvetica', 'normal');
+                const lines = doc.splitTextToSize(toAscii(text), maxWidth);
+                return lines.length * (fontSize * 0.42);
+            }
+
+            // Helper: Draw bullet list with modern styling and optional overflow protection
+            // maxY: if provided, stops rendering items when yPos would exceed maxY and shows "(+N more)"
+            function drawList(items, x, y, maxWidth, numbered = false, lineHeight = 3.2, maxY = null) {
                 doc.setTextColor(...textDark);
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'normal');
                 let currentY = y;
                 const filtered = (items || []).filter(item => item && String(item).trim());
-                filtered.forEach((item, index) => {
+
+                // Track how many items we render for the overflow indicator
+                let itemsRendered = 0;
+                const indicatorHeight = 4; // Height for "(+N more)" text
+
+                for (let index = 0; index < filtered.length; index++) {
+                    const item = filtered[index];
+                    const textWidth = numbered ? maxWidth - 6 : maxWidth - 5;
+                    const textX = numbered ? x + 6 : x + 5;
+                    const lines = doc.splitTextToSize(toAscii(item), textWidth);
+                    const itemHeight = lines.length * lineHeight;
+
+                    // Check overflow if maxY is set
+                    if (maxY !== null) {
+                        const remainingItems = filtered.length - index;
+
+                        // Check if current item would exceed boundary
+                        if (currentY + itemHeight > maxY) {
+                            // Show overflow indicator if there are remaining items and room for it
+                            if (remainingItems > 0 && currentY + indicatorHeight <= maxY) {
+                                doc.setTextColor(...textMuted);
+                                doc.setFontSize(7);
+                                doc.setFont('helvetica', 'italic');
+                                doc.text(`(+${remainingItems} more)`, x, currentY);
+                                currentY += indicatorHeight;
+                            }
+                            break;
+                        }
+
+                        // Check if we need to leave room for overflow indicator after this item
+                        if (index < filtered.length - 1) {
+                            const nextItem = filtered[index + 1];
+                            const nextLines = doc.splitTextToSize(toAscii(nextItem), textWidth);
+                            const nextItemHeight = nextLines.length * lineHeight;
+
+                            // If next item won't fit, check if we have room for this item + indicator
+                            if (currentY + itemHeight + nextItemHeight > maxY) {
+                                if (currentY + itemHeight + indicatorHeight > maxY) {
+                                    // Not enough room for item + indicator, show indicator now
+                                    const remaining = filtered.length - index;
+                                    doc.setTextColor(...textMuted);
+                                    doc.setFontSize(7);
+                                    doc.setFont('helvetica', 'italic');
+                                    doc.text(`(+${remaining} more)`, x, currentY);
+                                    currentY += indicatorHeight;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // Render the item
                     if (numbered) {
                         // Draw number with dark accent
                         doc.setTextColor(...darkBrown);
@@ -1354,19 +1491,20 @@
                         doc.text(`${index + 1}.`, x, currentY);
                         doc.setTextColor(...textDark);
                         doc.setFont('helvetica', 'normal');
-                        const lines = doc.splitTextToSize(toAscii(item), maxWidth - 6);
-                        doc.text(lines, x + 6, currentY);
-                        currentY += lines.length * lineHeight;
+                        doc.text(lines, textX, currentY);
                     } else {
                         // Modern bullet point
                         doc.setFillColor(...darkBrown);
                         doc.circle(x + 1, currentY - 1, 0.6, 'F');
                         doc.setTextColor(...textDark);
-                        const lines = doc.splitTextToSize(toAscii(item), maxWidth - 5);
-                        doc.text(lines, x + 5, currentY);
-                        currentY += lines.length * lineHeight;
+                        doc.setFont('helvetica', 'normal');
+                        doc.text(lines, textX, currentY);
                     }
-                });
+
+                    currentY += itemHeight;
+                    itemsRendered++;
+                }
+
                 return currentY;
             }
 
@@ -1480,7 +1618,10 @@
 
             // Core Values
             const cvItems = (vtoData.coreValues || []).filter(v => v && v.trim());
-            const cvHeight = Math.max(30, cvItems.length * 3.5 + 14);
+            // Dynamic height calculation accounting for text wrapping
+            const cvContentHeight = measureListHeight(cvItems, colWidth - 8, { numbered: true, lineHeight: 3 });
+            const cvHeaderPadding = 14 + (vtoData.theBar ? 4 : 0); // Extra padding for "The Bar" if present
+            const cvHeight = Math.max(30, cvContentHeight + cvHeaderPadding);
             let cvY = drawModernSection('Core Values', col1X, y1, colWidth, cvHeight);
 
             // The Bar inline
@@ -1495,7 +1636,12 @@
             y1 += cvHeight + 3;
 
             // Core Focus
-            const cfHeight = 38;
+            // Dynamic height calculation for Purpose and Niche text areas
+            const purposeHeight = measureTextHeight(vtoData.purpose || '', colWidth - 8, 8);
+            const nicheHeight = measureTextHeight(vtoData.niche || '', colWidth - 8, 8);
+            // Header padding: 7 (section header) + 3.5 (label) + 3 (spacing) + 3.5 (label) + buffer
+            const cfHeaderPadding = 20;
+            const cfHeight = Math.max(38, purposeHeight + nicheHeight + cfHeaderPadding);
             let cfY = drawModernSection('Core Focus', col1X, y1, colWidth, cfHeight);
             cfY = drawLabel('Purpose / Cause / Passion', col1X + 4, cfY, true);
             cfY = drawText(vtoData.purpose || '', col1X + 4, cfY, colWidth - 8, 8);
@@ -1551,7 +1697,10 @@
 
             // Target Market
             const tmItems = (vtoData.targetMarket || []).filter(t => t && t.trim());
-            const tmHeight = Math.max(35, tmItems.length * 3.5 + 16);
+            // Dynamic height calculation accounting for text wrapping (bullet list)
+            const tmContentHeight = measureListHeight(tmItems, colWidth - 8, { numbered: false, lineHeight: 3 });
+            const tmHeaderPadding = 16; // Section header + label padding
+            const tmHeight = Math.max(35, tmContentHeight + tmHeaderPadding);
             let tmY = drawModernSection('Target Market', col3X, y3, colWidth, tmHeight);
             tmY = drawLabel('Demographics, Geographics, Psychographics', col3X + 4, tmY);
             drawList(tmItems, col3X + 4, tmY, colWidth - 8, false, 3);
@@ -1559,7 +1708,10 @@
 
             // Three Uniques
             const tuItems = (vtoData.threeUniques || []).filter(t => t && t.trim());
-            const tuHeight = Math.max(35, tuItems.length * 3.5 + 12);
+            // Dynamic height calculation accounting for text wrapping (numbered list)
+            const tuContentHeight = measureListHeight(tuItems, colWidth - 8, { numbered: true, lineHeight: 3 });
+            const tuHeaderPadding = 12; // Section header padding
+            const tuHeight = Math.max(35, tuContentHeight + tuHeaderPadding);
             let tuY = drawModernSection('Three Uniques', col3X, y3, colWidth, tuHeight);
             drawList(tuItems, col3X + 4, tuY, colWidth - 8, true, 3);
             y3 += tuHeight + 3;

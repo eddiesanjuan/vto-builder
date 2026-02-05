@@ -1508,7 +1508,7 @@
                 return currentY;
             }
 
-            // Helper: Draw metric badge
+            // Helper: Draw metric badge (legacy - kept for compatibility)
             function drawMetric(label, value, x, y, width) {
                 if (!value) return y;
                 doc.setFillColor(...offWhite);
@@ -1524,6 +1524,74 @@
                 doc.setFont('helvetica', 'bold');
                 doc.text(toAscii(value), x + 2, y + 3);
                 return y + 9;
+            }
+
+            // Helper: Draw EOS Revenue Diamond - THE signature visual of an EOS VTO
+            // A large diamond shape displaying revenue and profit prominently
+            function drawRevenueDiamond(x, y, size, revenue, profit) {
+                if (!revenue && !profit) return;
+
+                const halfSize = size / 2;
+                const centerX = x + halfSize;
+                const centerY = y + halfSize;
+
+                // Draw diamond shape (rotated square)
+                doc.setFillColor(...deepRed);
+                doc.setDrawColor(...darkBrown);
+                doc.setLineWidth(1);
+
+                // Diamond points: top, right, bottom, left
+                const points = [
+                    [centerX, y],                    // top
+                    [x + size, centerY],             // right
+                    [centerX, y + size],             // bottom
+                    [x, centerY]                     // left
+                ];
+
+                // Draw filled diamond
+                doc.setFillColor(...deepRed);
+                doc.triangle(points[0][0], points[0][1], points[1][0], points[1][1], points[3][0], points[3][1], 'F');
+                doc.triangle(points[1][0], points[1][1], points[2][0], points[2][1], points[3][0], points[3][1], 'F');
+
+                // Draw border
+                doc.setDrawColor(...darkBrown);
+                doc.setLineWidth(0.8);
+                doc.line(points[0][0], points[0][1], points[1][0], points[1][1]);
+                doc.line(points[1][0], points[1][1], points[2][0], points[2][1]);
+                doc.line(points[2][0], points[2][1], points[3][0], points[3][1]);
+                doc.line(points[3][0], points[3][1], points[0][0], points[0][1]);
+
+                // Inner accent line (smaller diamond)
+                const innerOffset = 2;
+                doc.setDrawColor(...white);
+                doc.setLineWidth(0.3);
+                doc.line(centerX, y + innerOffset, x + size - innerOffset, centerY);
+                doc.line(x + size - innerOffset, centerY, centerX, y + size - innerOffset);
+                doc.line(centerX, y + size - innerOffset, x + innerOffset, centerY);
+                doc.line(x + innerOffset, centerY, centerX, y + innerOffset);
+
+                // Revenue text (top half)
+                doc.setTextColor(...white);
+                doc.setFontSize(6);
+                doc.setFont('helvetica', 'normal');
+                doc.text('REVENUE', centerX, centerY - 5, { align: 'center' });
+
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'bold');
+                const revenueText = toAscii(revenue || '-');
+                doc.text(revenueText, centerX, centerY - 0.5, { align: 'center' });
+
+                // Profit text (bottom half)
+                doc.setFontSize(6);
+                doc.setFont('helvetica', 'normal');
+                doc.text('PROFIT', centerX, centerY + 4, { align: 'center' });
+
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'bold');
+                const profitText = toAscii(profit || '-');
+                doc.text(profitText, centerX, centerY + 8.5, { align: 'center' });
+
+                return y + size;
             }
 
             // ==================== PAGE HEADER FUNCTION ====================
@@ -1623,6 +1691,7 @@
             const cvHeaderPadding = 14 + (vtoData.theBar ? 4 : 0); // Extra padding for "The Bar" if present
             const cvHeight = Math.max(30, cvContentHeight + cvHeaderPadding);
             let cvY = drawModernSection('Core Values', col1X, y1, colWidth, cvHeight);
+            const cvSectionBottom = y1 + cvHeight - 3; // Bottom boundary
 
             // The Bar inline
             if (vtoData.theBar) {
@@ -1632,7 +1701,7 @@
                 doc.text(toAscii('THE BAR: ' + vtoData.theBar), col1X + 4, cvY);
                 cvY += 4;
             }
-            drawList(cvItems, col1X + 4, cvY, colWidth - 8, true, 3);
+            drawList(cvItems, col1X + 4, cvY, colWidth - 8, true, 3, cvSectionBottom);
             y1 += cvHeight + 3;
 
             // Core Focus
@@ -1643,16 +1712,19 @@
             const cfHeaderPadding = 20;
             const cfHeight = Math.max(38, purposeHeight + nicheHeight + cfHeaderPadding);
             let cfY = drawModernSection('Core Focus', col1X, y1, colWidth, cfHeight);
+            const cfSectionBottom = y1 + cfHeight - 3; // Bottom boundary
             cfY = drawLabel('Purpose / Cause / Passion', col1X + 4, cfY, true);
-            cfY = drawText(vtoData.purpose || '', col1X + 4, cfY, colWidth - 8, 8);
+            cfY = drawText(vtoData.purpose || '', col1X + 4, cfY, colWidth - 8, 8, false, textDark, cfSectionBottom);
             cfY += 3;
             cfY = drawLabel('Our Niche', col1X + 4, cfY, true);
-            drawText(vtoData.niche || '', col1X + 4, cfY, colWidth - 8, 8);
+            drawText(vtoData.niche || '', col1X + 4, cfY, colWidth - 8, 8, false, textDark, cfSectionBottom);
             y1 += cfHeight + 3;
 
             // 10-Year Target
             const tenHeight = availHeight - (cvHeight + cfHeight + 6);
-            let tenY = drawModernSection('10-Year Target', col1X, y1, colWidth, Math.max(tenHeight, 25));
+            const tenSectionHeight = Math.max(tenHeight, 25);
+            let tenY = drawModernSection('10-Year Target', col1X, y1, colWidth, tenSectionHeight);
+            const tenSectionBottom = y1 + tenSectionHeight - 3; // Bottom boundary
             if (vtoData.tenYearDate) {
                 doc.setTextColor(...darkBrown);
                 doc.setFontSize(8);
@@ -1660,15 +1732,16 @@
                 doc.text(toAscii(formatDate(vtoData.tenYearDate)), col1X + 4, tenY);
                 tenY += 4;
             }
-            drawText(vtoData.tenYearTarget || '', col1X + 4, tenY, colWidth - 8, 8);
+            drawText(vtoData.tenYearTarget || '', col1X + 4, tenY, colWidth - 8, 8, false, textDark, tenSectionBottom);
 
             // ---- Column 2: 3-Year Picture ----
             let y2 = startY;
             const bullets = (vtoData.threeYearBullets || []).filter(b => b && b.trim());
             const threeHeight = availHeight;
             let threeY = drawModernSection('3-Year Picture', col2X, y2, colWidth, threeHeight);
+            const threeYearSectionBottom = y2 + threeHeight - 3; // Bottom boundary for overflow protection
 
-            // Date and metrics
+            // Date header
             if (vtoData.threeYearDate) {
                 doc.setTextColor(...deepRed);
                 doc.setFontSize(9);
@@ -1677,20 +1750,16 @@
                 threeY += 5;
             }
 
-            // Revenue and profit metrics side by side
+            // REVENUE DIAMOND - The EOS signature visual
             if (vtoData.threeYearRevenue || vtoData.threeYearProfit) {
-                const metricWidth = (colWidth - 12) / 2;
-                if (vtoData.threeYearRevenue) {
-                    drawMetric('Revenue', vtoData.threeYearRevenue, col2X + 4, threeY, metricWidth);
-                }
-                if (vtoData.threeYearProfit) {
-                    drawMetric('Profit', vtoData.threeYearProfit, col2X + 4 + metricWidth + 2, threeY, metricWidth);
-                }
-                threeY += 11;
+                const diamondSize = 28;
+                const diamondX = col2X + (colWidth - diamondSize) / 2; // Center in column
+                drawRevenueDiamond(diamondX, threeY, diamondSize, vtoData.threeYearRevenue, vtoData.threeYearProfit);
+                threeY += diamondSize + 4;
             }
 
             threeY = drawLabel('What Does It Look Like?', col2X + 4, threeY, true);
-            drawList(bullets, col2X + 4, threeY, colWidth - 8, false, 3);
+            drawList(bullets, col2X + 4, threeY, colWidth - 8, false, 3, threeYearSectionBottom);
 
             // ---- Column 3: Marketing Strategy ----
             let y3 = startY;
@@ -1699,11 +1768,21 @@
             const tmItems = (vtoData.targetMarket || []).filter(t => t && t.trim());
             // Dynamic height calculation accounting for text wrapping (bullet list)
             const tmContentHeight = measureListHeight(tmItems, colWidth - 8, { numbered: false, lineHeight: 3 });
-            const tmHeaderPadding = 16; // Section header + label padding
+            const tmHeaderPadding = 20; // Section header + multi-line label padding
             const tmHeight = Math.max(35, tmContentHeight + tmHeaderPadding);
             let tmY = drawModernSection('Target Market', col3X, y3, colWidth, tmHeight);
-            tmY = drawLabel('Demographics, Geographics, Psychographics', col3X + 4, tmY);
-            drawList(tmItems, col3X + 4, tmY, colWidth - 8, false, 3);
+            const tmSectionBottom = y3 + tmHeight - 3; // Bottom boundary
+
+            // Fix: Wrap the long Demographics label properly using smaller font
+            doc.setTextColor(...darkBrown);
+            doc.setFontSize(5.5); // Smaller font to fit
+            doc.setFont('helvetica', 'bold');
+            const demoLabel = 'DEMOGRAPHICS / GEOGRAPHICS / PSYCHOGRAPHICS';
+            const labelLines = doc.splitTextToSize(demoLabel, colWidth - 8);
+            doc.text(labelLines, col3X + 4, tmY);
+            tmY += labelLines.length * 2.5 + 1.5;
+
+            drawList(tmItems, col3X + 4, tmY, colWidth - 8, false, 3, tmSectionBottom);
             y3 += tmHeight + 3;
 
             // Three Uniques
@@ -1713,19 +1792,23 @@
             const tuHeaderPadding = 12; // Section header padding
             const tuHeight = Math.max(35, tuContentHeight + tuHeaderPadding);
             let tuY = drawModernSection('Three Uniques', col3X, y3, colWidth, tuHeight);
-            drawList(tuItems, col3X + 4, tuY, colWidth - 8, true, 3);
+            const tuSectionBottom = y3 + tuHeight - 3; // Bottom boundary
+            drawList(tuItems, col3X + 4, tuY, colWidth - 8, true, 3, tuSectionBottom);
             y3 += tuHeight + 3;
 
             // Proven Process
             const ppHeight = availHeight - tmHeight - tuHeight - 6;
-            let ppY = drawModernSection('Proven Process', col3X, y3, colWidth, Math.max(ppHeight, 20));
-            drawText(vtoData.provenProcess || '', col3X + 4, ppY, colWidth - 8, 8);
+            const ppSectionHeight = Math.max(ppHeight, 20);
+            let ppY = drawModernSection('Proven Process', col3X, y3, colWidth, ppSectionHeight);
+            const ppSectionBottom = y3 + ppSectionHeight - 3; // Bottom boundary for overflow protection
+            drawText(vtoData.provenProcess || '', col3X + 4, ppY, colWidth - 8, 8, false, textDark, ppSectionBottom);
 
             // ---- Column 4: Guarantee ----
             let y4 = startY;
             const gHeight = availHeight;
             let gY = drawModernSection('Guarantee', col4X, y4, colWidth, gHeight);
-            drawText(vtoData.guarantee || '', col4X + 4, gY, colWidth - 8, 8);
+            const guaranteeSectionBottom = y4 + gHeight - 3; // Bottom boundary
+            drawText(vtoData.guarantee || '', col4X + 4, gY, colWidth - 8, 8, false, textDark, guaranteeSectionBottom);
 
             drawPageFooter();
 
@@ -1745,6 +1828,7 @@
             const goals = (vtoData.oneYearGoals || []).filter(g => g && g.trim());
             const oneYearHeight = availHeight;
             let oyY = drawModernSection('1-Year Plan', tCol1X, y1, tColWidth, oneYearHeight);
+            const oneYearSectionBottom = y1 + oneYearHeight - 3; // Bottom boundary
 
             if (vtoData.oneYearDate) {
                 doc.setTextColor(...deepRed);
@@ -1754,16 +1838,12 @@
                 oyY += 5;
             }
 
-            // Metrics
+            // REVENUE DIAMOND - The EOS signature visual
             if (vtoData.oneYearRevenue || vtoData.oneYearProfit) {
-                const metricWidth = (tColWidth - 12) / 2;
-                if (vtoData.oneYearRevenue) {
-                    drawMetric('Revenue', vtoData.oneYearRevenue, tCol1X + 4, oyY, metricWidth);
-                }
-                if (vtoData.oneYearProfit) {
-                    drawMetric('Profit', vtoData.oneYearProfit, tCol1X + 4 + metricWidth + 2, oyY, metricWidth);
-                }
-                oyY += 11;
+                const diamondSize = 28;
+                const diamondX = tCol1X + (tColWidth - diamondSize) / 2; // Center in column
+                drawRevenueDiamond(diamondX, oyY, diamondSize, vtoData.oneYearRevenue, vtoData.oneYearProfit);
+                oyY += diamondSize + 4;
             }
 
             // Theme
@@ -1778,13 +1858,14 @@
             }
 
             oyY = drawLabel('Goals', tCol1X + 4, oyY, true);
-            drawList(goals, tCol1X + 4, oyY, tColWidth - 8, true, 3.2);
+            drawList(goals, tCol1X + 4, oyY, tColWidth - 8, true, 3.2, oneYearSectionBottom);
 
             // ---- Column 2: Quarterly Rocks ----
             y2 = startY;
             const rocksFiltered = (vtoData.rocks || []).filter(r => r && r.text && r.text.trim());
             const rocksHeight = availHeight;
             let qrY = drawModernSection('Quarterly Rocks', tCol2X, y2, tColWidth, rocksHeight);
+            const rocksSectionBottom = y2 + rocksHeight - 3; // Bottom boundary
 
             if (vtoData.rocksDate) {
                 doc.setTextColor(...deepRed);
@@ -1794,16 +1875,12 @@
                 qrY += 5;
             }
 
-            // Metrics
+            // REVENUE DIAMOND - The EOS signature visual
             if (vtoData.rocksRevenue || vtoData.rocksProfit) {
-                const metricWidth = (tColWidth - 12) / 2;
-                if (vtoData.rocksRevenue) {
-                    drawMetric('Revenue', vtoData.rocksRevenue, tCol2X + 4, qrY, metricWidth);
-                }
-                if (vtoData.rocksProfit) {
-                    drawMetric('Profit', vtoData.rocksProfit, tCol2X + 4 + metricWidth + 2, qrY, metricWidth);
-                }
-                qrY += 11;
+                const diamondSize = 28;
+                const diamondX = tCol2X + (tColWidth - diamondSize) / 2; // Center in column
+                drawRevenueDiamond(diamondX, qrY, diamondSize, vtoData.rocksRevenue, vtoData.rocksProfit);
+                qrY += diamondSize + 4;
             }
 
             // Theme
@@ -1817,8 +1894,25 @@
                 qrY += 10;
             }
 
-            // Draw rocks with owner badges
-            rocksFiltered.forEach((rock, index) => {
+            // Draw rocks with owner badges (with overflow protection)
+            let rocksRendered = 0;
+            for (let index = 0; index < rocksFiltered.length; index++) {
+                const rock = rocksFiltered[index];
+                const rockLines = doc.splitTextToSize(toAscii(rock.text), tColWidth - 40);
+                const itemHeight = rockLines.length * 3.2 + 2;
+
+                // Check if this item would overflow
+                if (qrY + itemHeight > rocksSectionBottom) {
+                    const remaining = rocksFiltered.length - index;
+                    if (remaining > 0 && qrY + 4 <= rocksSectionBottom) {
+                        doc.setTextColor(...textMuted);
+                        doc.setFontSize(7);
+                        doc.setFont('helvetica', 'italic');
+                        doc.text(`(+${remaining} more rocks)`, tCol2X + 4, qrY);
+                    }
+                    break;
+                }
+
                 // Rock number with dark accent
                 doc.setTextColor(...darkBrown);
                 doc.setFontSize(8);
@@ -1828,7 +1922,6 @@
                 // Rock text
                 doc.setTextColor(...textDark);
                 doc.setFont('helvetica', 'normal');
-                const rockLines = doc.splitTextToSize(toAscii(rock.text), tColWidth - 40);
                 doc.text(rockLines, tCol2X + 10, qrY);
 
                 // Owner badge
@@ -1843,17 +1936,35 @@
                     doc.text(ownerText, tCol2X + tColWidth - 6, qrY, { align: 'right' });
                 }
 
-                qrY += rockLines.length * 3.2 + 2;
-            });
+                qrY += itemHeight;
+                rocksRendered++;
+            }
 
             // ---- Column 3: Issues List ----
             y3 = startY;
             const issuesFiltered = (vtoData.issues || []).filter(i => i && i.text && i.text.trim());
             const issuesHeight = availHeight;
             let issY = drawModernSection('Issues List', tCol3X, y3, tColWidth, issuesHeight);
+            const issuesSectionBottom = y3 + issuesHeight - 3; // Bottom boundary
 
-            // Draw issues with status badges
-            issuesFiltered.forEach((issue, index) => {
+            // Draw issues with status badges (with overflow protection)
+            for (let index = 0; index < issuesFiltered.length; index++) {
+                const issue = issuesFiltered[index];
+                const issueLines = doc.splitTextToSize(toAscii(issue.text), tColWidth - 35);
+                const itemHeight = issueLines.length * 3.2 + 2;
+
+                // Check if this item would overflow
+                if (issY + itemHeight > issuesSectionBottom) {
+                    const remaining = issuesFiltered.length - index;
+                    if (remaining > 0 && issY + 4 <= issuesSectionBottom) {
+                        doc.setTextColor(...textMuted);
+                        doc.setFontSize(7);
+                        doc.setFont('helvetica', 'italic');
+                        doc.text(`(+${remaining} more issues)`, tCol3X + 4, issY);
+                    }
+                    break;
+                }
+
                 // Issue number
                 doc.setTextColor(...darkBrown);
                 doc.setFontSize(8);
@@ -1863,7 +1974,6 @@
                 // Issue text
                 doc.setTextColor(...textDark);
                 doc.setFont('helvetica', 'normal');
-                const issueLines = doc.splitTextToSize(toAscii(issue.text), tColWidth - 35);
                 doc.text(issueLines, tCol3X + 10, issY);
 
                 // Status badge with colors
@@ -1896,8 +2006,8 @@
                     doc.text(statusText, tCol3X + tColWidth - 6, issY - 0.5, { align: 'right' });
                 }
 
-                issY += issueLines.length * 3.2 + 2;
-            });
+                issY += itemHeight;
+            }
 
             drawPageFooter();
 

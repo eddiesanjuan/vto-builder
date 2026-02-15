@@ -3,8 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'none';
+                   script-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline';
+                   style-src 'self' 'unsafe-inline';
+                   img-src 'self' blob: data:;
+                   connect-src 'none';
+                   form-action 'none';
+                   base-uri 'none';">
     <title>VTO Builder - Vision/Traction Organizer</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+            integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
     <style>
         * {
             margin: 0;
@@ -515,9 +526,9 @@
         </div>
 
         <!-- Tabs -->
-        <div class="tabs">
-            <div class="tab active" data-tab="vision">Page 1: Vision</div>
-            <div class="tab" data-tab="traction">Page 2: Traction</div>
+        <div class="tabs" role="tablist">
+            <div class="tab active" data-tab="vision" role="tab" tabindex="0" aria-selected="true">Page 1: Vision</div>
+            <div class="tab" data-tab="traction" role="tab" tabindex="0" aria-selected="false">Page 2: Traction</div>
         </div>
 
         <!-- Vision Tab -->
@@ -791,13 +802,24 @@
 
         let vtoData = getDefaultData();
 
-        // Tab handling
+        // Tab handling with keyboard support
+        function activateTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.remove('active');
+                t.setAttribute('aria-selected', 'false');
+            });
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            tab.setAttribute('aria-selected', 'true');
+            document.getElementById(tab.dataset.tab).classList.add('active');
+        }
         document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                tab.classList.add('active');
-                document.getElementById(tab.dataset.tab).classList.add('active');
+            tab.addEventListener('click', () => activateTab(tab));
+            tab.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    activateTab(tab);
+                }
             });
         });
 
@@ -821,7 +843,7 @@
             renderIssuesList();
         }
 
-        // Render simple list
+        // Render simple list (safe DOM construction - no innerHTML with user data)
         function renderList(containerId, dataKey) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
@@ -829,20 +851,35 @@
             vtoData[dataKey].forEach((item, index) => {
                 const div = document.createElement('div');
                 div.className = 'list-item';
-                div.innerHTML = `
-                    <span class="item-number">${index + 1}.</span>
-                    <input type="text" value="${escapeHtml(item)}"
-                           onchange="updateListItem('${dataKey}', ${index}, this.value)"
-                           placeholder="Enter value...">
-                    <button class="btn-remove" onclick="removeListItem('${dataKey}', ${index}, '${containerId}')" title="Remove">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                `;
+
+                const span = document.createElement('span');
+                span.className = 'item-number';
+                span.textContent = (index + 1) + '.';
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = item || '';
+                input.placeholder = 'Enter value...';
+                input.addEventListener('change', function() {
+                    updateListItem(dataKey, index, this.value);
+                });
+
+                const btn = document.createElement('button');
+                btn.className = 'btn-remove';
+                btn.title = 'Remove';
+                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                btn.addEventListener('click', function() {
+                    removeListItem(dataKey, index, containerId);
+                });
+
+                div.appendChild(span);
+                div.appendChild(input);
+                div.appendChild(btn);
                 container.appendChild(div);
             });
         }
 
-        // Render rocks list
+        // Render rocks list (safe DOM construction - no innerHTML with user data)
         function renderRocksList() {
             const container = document.getElementById('rocksList');
             container.innerHTML = '';
@@ -850,23 +887,44 @@
             vtoData.rocks.forEach((rock, index) => {
                 const div = document.createElement('div');
                 div.className = 'rock-item';
-                div.innerHTML = `
-                    <span class="item-number">${index + 1}.</span>
-                    <input type="text" value="${escapeHtml(rock.text || '')}"
-                           onchange="updateRock(${index}, 'text', this.value)"
-                           placeholder="Rock description...">
-                    <input type="text" value="${escapeHtml(rock.owner || '')}"
-                           onchange="updateRock(${index}, 'owner', this.value)"
-                           placeholder="Owner">
-                    <button class="btn-remove" onclick="removeRock(${index})" title="Remove">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                `;
+
+                const span = document.createElement('span');
+                span.className = 'item-number';
+                span.textContent = (index + 1) + '.';
+
+                const textInput = document.createElement('input');
+                textInput.type = 'text';
+                textInput.value = rock.text || '';
+                textInput.placeholder = 'Rock description...';
+                textInput.addEventListener('change', function() {
+                    updateRock(index, 'text', this.value);
+                });
+
+                const ownerInput = document.createElement('input');
+                ownerInput.type = 'text';
+                ownerInput.value = rock.owner || '';
+                ownerInput.placeholder = 'Owner';
+                ownerInput.addEventListener('change', function() {
+                    updateRock(index, 'owner', this.value);
+                });
+
+                const btn = document.createElement('button');
+                btn.className = 'btn-remove';
+                btn.title = 'Remove';
+                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                btn.addEventListener('click', function() {
+                    removeRock(index);
+                });
+
+                div.appendChild(span);
+                div.appendChild(textInput);
+                div.appendChild(ownerInput);
+                div.appendChild(btn);
                 container.appendChild(div);
             });
         }
 
-        // Render issues list
+        // Render issues list (safe DOM construction - no innerHTML with user data)
         function renderIssuesList() {
             const container = document.getElementById('issuesList');
             container.innerHTML = '';
@@ -875,21 +933,49 @@
                 const div = document.createElement('div');
                 div.className = 'issue-item';
                 const status = issue.status || '';
-                div.innerHTML = `
-                    <span class="item-number">${index + 1}.</span>
-                    <input type="text" value="${escapeHtml(issue.text || '')}"
-                           onchange="updateIssue(${index}, 'text', this.value)"
-                           placeholder="Issue description...">
-                    <select onchange="updateIssue(${index}, 'status', this.value)">
-                        <option value="" ${status === '' ? 'selected' : ''}>No Status</option>
-                        <option value="IN PROGRESS" ${status === 'IN PROGRESS' ? 'selected' : ''}>In Progress</option>
-                        <option value="DONE" ${status === 'DONE' ? 'selected' : ''}>Done</option>
-                        <option value="NEED" ${status === 'NEED' ? 'selected' : ''}>Need</option>
-                    </select>
-                    <button class="btn-remove" onclick="removeIssue(${index})" title="Remove">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                `;
+
+                const span = document.createElement('span');
+                span.className = 'item-number';
+                span.textContent = (index + 1) + '.';
+
+                const textInput = document.createElement('input');
+                textInput.type = 'text';
+                textInput.value = issue.text || '';
+                textInput.placeholder = 'Issue description...';
+                textInput.addEventListener('change', function() {
+                    updateIssue(index, 'text', this.value);
+                });
+
+                const select = document.createElement('select');
+                const statusOptions = [
+                    { value: '', label: 'No Status' },
+                    { value: 'IN PROGRESS', label: 'In Progress' },
+                    { value: 'DONE', label: 'Done' },
+                    { value: 'NEED', label: 'Need' }
+                ];
+                statusOptions.forEach(opt => {
+                    const option = document.createElement('option');
+                    option.value = opt.value;
+                    option.textContent = opt.label;
+                    if (opt.value === status) option.selected = true;
+                    select.appendChild(option);
+                });
+                select.addEventListener('change', function() {
+                    updateIssue(index, 'status', this.value);
+                });
+
+                const btn = document.createElement('button');
+                btn.className = 'btn-remove';
+                btn.title = 'Remove';
+                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                btn.addEventListener('click', function() {
+                    removeIssue(index);
+                });
+
+                div.appendChild(span);
+                div.appendChild(textInput);
+                div.appendChild(select);
+                div.appendChild(btn);
                 container.appendChild(div);
             });
         }
@@ -954,29 +1040,18 @@
             }
         }
 
+        // Field IDs for form <-> data sync (single source of truth)
+        const FIELD_IDS = [
+            'companyName', 'vtoDate', 'quarter', 'theBar', 'purpose', 'niche',
+            'tenYearDate', 'tenYearTarget', 'threeYearDate', 'threeYearRevenue',
+            'threeYearProfit', 'provenProcess', 'guarantee', 'oneYearDate',
+            'oneYearRevenue', 'oneYearProfit', 'oneYearTheme', 'rocksDate',
+            'rocksRevenue', 'rocksProfit', 'rocksTheme'
+        ];
+
         // Collect form data from inputs
         function collectFormData() {
-            vtoData.companyName = document.getElementById('companyName').value;
-            vtoData.vtoDate = document.getElementById('vtoDate').value;
-            vtoData.quarter = document.getElementById('quarter').value;
-            vtoData.theBar = document.getElementById('theBar').value;
-            vtoData.purpose = document.getElementById('purpose').value;
-            vtoData.niche = document.getElementById('niche').value;
-            vtoData.tenYearDate = document.getElementById('tenYearDate').value;
-            vtoData.tenYearTarget = document.getElementById('tenYearTarget').value;
-            vtoData.threeYearDate = document.getElementById('threeYearDate').value;
-            vtoData.threeYearRevenue = document.getElementById('threeYearRevenue').value;
-            vtoData.threeYearProfit = document.getElementById('threeYearProfit').value;
-            vtoData.provenProcess = document.getElementById('provenProcess').value;
-            vtoData.guarantee = document.getElementById('guarantee').value;
-            vtoData.oneYearDate = document.getElementById('oneYearDate').value;
-            vtoData.oneYearRevenue = document.getElementById('oneYearRevenue').value;
-            vtoData.oneYearProfit = document.getElementById('oneYearProfit').value;
-            vtoData.oneYearTheme = document.getElementById('oneYearTheme').value;
-            vtoData.rocksDate = document.getElementById('rocksDate').value;
-            vtoData.rocksRevenue = document.getElementById('rocksRevenue').value;
-            vtoData.rocksProfit = document.getElementById('rocksProfit').value;
-            vtoData.rocksTheme = document.getElementById('rocksTheme').value;
+            FIELD_IDS.forEach(id => { vtoData[id] = document.getElementById(id).value; });
         }
 
         // Collect list values directly from DOM (fixes bug #1: list edits lost on export)
@@ -1028,48 +1103,36 @@
 
         // Populate form from data
         function populateForm() {
-            document.getElementById('companyName').value = vtoData.companyName || '';
-            document.getElementById('vtoDate').value = vtoData.vtoDate || '';
-            document.getElementById('quarter').value = vtoData.quarter || '';
-            document.getElementById('theBar').value = vtoData.theBar || '';
-            document.getElementById('purpose').value = vtoData.purpose || '';
-            document.getElementById('niche').value = vtoData.niche || '';
-            document.getElementById('tenYearDate').value = vtoData.tenYearDate || '';
-            document.getElementById('tenYearTarget').value = vtoData.tenYearTarget || '';
-            document.getElementById('threeYearDate').value = vtoData.threeYearDate || '';
-            document.getElementById('threeYearRevenue').value = vtoData.threeYearRevenue || '';
-            document.getElementById('threeYearProfit').value = vtoData.threeYearProfit || '';
-            document.getElementById('provenProcess').value = vtoData.provenProcess || '';
-            document.getElementById('guarantee').value = vtoData.guarantee || '';
-            document.getElementById('oneYearDate').value = vtoData.oneYearDate || '';
-            document.getElementById('oneYearRevenue').value = vtoData.oneYearRevenue || '';
-            document.getElementById('oneYearProfit').value = vtoData.oneYearProfit || '';
-            document.getElementById('oneYearTheme').value = vtoData.oneYearTheme || '';
-            document.getElementById('rocksDate').value = vtoData.rocksDate || '';
-            document.getElementById('rocksRevenue').value = vtoData.rocksRevenue || '';
-            document.getElementById('rocksProfit').value = vtoData.rocksProfit || '';
-            document.getElementById('rocksTheme').value = vtoData.rocksTheme || '';
+            FIELD_IDS.forEach(id => { document.getElementById(id).value = vtoData[id] || ''; });
             initializeLists();
         }
 
         // Normalize imported data with defaults and type checks (fixes bug #3)
+        const MAX_LIST_ITEMS = 100;
+        const MAX_STRING_LENGTH = 10000;
+
         function normalizeData(data) {
             const defaults = getDefaultData();
             const normalized = { ...defaults };
 
             for (const key in defaults) {
-                if (data.hasOwnProperty(key)) {
+                if (Object.prototype.hasOwnProperty.call(data, key)) {
                     const defaultVal = defaults[key];
                     const importedVal = data[key];
 
                     if (Array.isArray(defaultVal)) {
-                        // Ensure arrays are arrays
                         if (Array.isArray(importedVal)) {
-                            normalized[key] = importedVal;
+                            // Cap array length and coerce simple list items to strings
+                            const capped = importedVal.slice(0, MAX_LIST_ITEMS);
+                            if (key === 'rocks' || key === 'issues') {
+                                normalized[key] = capped;
+                            } else {
+                                normalized[key] = capped.map(item => String(item || '').substring(0, MAX_STRING_LENGTH));
+                            }
                         }
                     } else if (typeof defaultVal === 'string') {
-                        // Ensure strings are strings
-                        normalized[key] = typeof importedVal === 'string' ? importedVal : String(importedVal || '');
+                        const str = typeof importedVal === 'string' ? importedVal : String(importedVal || '');
+                        normalized[key] = str.substring(0, MAX_STRING_LENGTH);
                     } else {
                         normalized[key] = importedVal;
                     }
@@ -1079,16 +1142,16 @@
             // Normalize rocks array items
             if (Array.isArray(normalized.rocks)) {
                 normalized.rocks = normalized.rocks.map(rock => ({
-                    text: typeof rock === 'object' && rock !== null ? String(rock.text || '') : '',
-                    owner: typeof rock === 'object' && rock !== null ? String(rock.owner || '') : ''
+                    text: (typeof rock === 'object' && rock !== null ? String(rock.text || '') : '').substring(0, MAX_STRING_LENGTH),
+                    owner: (typeof rock === 'object' && rock !== null ? String(rock.owner || '') : '').substring(0, MAX_STRING_LENGTH)
                 }));
             }
 
             // Normalize issues array items
             if (Array.isArray(normalized.issues)) {
                 normalized.issues = normalized.issues.map(issue => ({
-                    text: typeof issue === 'object' && issue !== null ? String(issue.text || '') : '',
-                    status: typeof issue === 'object' && issue !== null ? String(issue.status || '') : ''
+                    text: (typeof issue === 'object' && issue !== null ? String(issue.text || '') : '').substring(0, MAX_STRING_LENGTH),
+                    status: (typeof issue === 'object' && issue !== null ? String(issue.status || '') : '').substring(0, MAX_STRING_LENGTH)
                 }));
             }
 
@@ -1130,7 +1193,7 @@
                 .replace(/-+$/, '') || 'export';
         }
 
-        // Replace unicode chars with ASCII for PDF
+        // Replace unicode chars with ASCII for PDF (jsPDF only supports Helvetica/Times/Courier)
         function toAscii(text) {
             if (!text) return '';
             return text
@@ -1139,15 +1202,29 @@
                 .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
                 // Dashes
                 .replace(/[\u2013\u2014]/g, '-')
+                .replace(/\u2212/g, '-')  // Minus sign
                 // Ellipsis
                 .replace(/\u2026/g, '...')
-                // Other common replacements
+                // Spaces
                 .replace(/\u00A0/g, ' ')  // Non-breaking space
+                // Punctuation
                 .replace(/\u00AB/g, '<<')
                 .replace(/\u00BB/g, '>>')
                 .replace(/\u2022/g, '-')  // Bullet
                 .replace(/\u00B7/g, '-')  // Middle dot
-                .replace(/\u2019/g, "'"); // Right single quote
+                // Symbols common in business docs
+                .replace(/\u00AE/g, '(R)')   // Registered trademark
+                .replace(/\u2122/g, '(TM)')  // Trademark
+                .replace(/\u00A9/g, '(c)')   // Copyright
+                // Fractions
+                .replace(/\u00BD/g, '1/2')
+                .replace(/\u00BC/g, '1/4')
+                .replace(/\u00BE/g, '3/4')
+                // Measurement (relevant for millwork)
+                .replace(/\u00B0/g, 'deg')   // Degree
+                .replace(/\u2032/g, "'")     // Prime (feet)
+                .replace(/\u2033/g, '"')     // Double prime (inches)
+                .replace(/\u00D7/g, 'x');    // Multiplication sign
         }
 
         // Export JSON
@@ -1161,10 +1238,13 @@
             a.href = url;
             const safeName = sanitizeFilename(vtoData.companyName);
             a.download = `VTO-${safeName}-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            try {
+                document.body.appendChild(a);
+                a.click();
+            } finally {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
             showToast('JSON exported', 'success');
         }
 
@@ -1172,6 +1252,13 @@
         function importJSON(event) {
             const file = event.target.files[0];
             if (!file) return;
+
+            // Reject files larger than 1MB
+            if (file.size > 1024 * 1024) {
+                showToast('File too large (max 1MB)', 'error');
+                event.target.value = '';
+                return;
+            }
 
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -1193,6 +1280,7 @@
         function clearAll() {
             if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
                 vtoData = getDefaultData();
+                vtoData.vtoDate = new Date().toISOString().split('T')[0];
                 vtoData.coreValues = [''];
                 vtoData.threeYearBullets = [''];
                 vtoData.targetMarket = [''];
@@ -1210,7 +1298,9 @@
         function showToast(message, type = '') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
-            toast.className = 'toast ' + type;
+            const validTypes = ['success', 'error', ''];
+            const safeType = validTypes.includes(type) ? type : '';
+            toast.className = 'toast ' + safeType;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
@@ -1278,7 +1368,13 @@
             // Get quarter display string
             function getQuarterDisplay() {
                 if (!vtoData.quarter) return '';
-                const year = vtoData.vtoDate ? new Date(vtoData.vtoDate + 'T00:00:00').getFullYear() : new Date().getFullYear();
+                let year;
+                if (vtoData.vtoDate) {
+                    const parts = vtoData.vtoDate.split('-');
+                    year = parseInt(parts[0], 10);
+                } else {
+                    year = new Date().getFullYear();
+                }
                 return `${vtoData.quarter} ${year}`;
             }
 
@@ -1798,8 +1894,8 @@
             const ppText = vtoData.provenProcess || '';
             const ppContentHeight = measureTextHeight(ppText, colWidth - 8, 8);
             const ppHeaderPadding = 12; // Section header padding
-            const ppRemainingSpace = availHeight - (y3 - startY); // Space left in column
-            const ppSectionHeight = Math.min(ppRemainingSpace, Math.max(25, ppContentHeight + ppHeaderPadding));
+            const ppRemainingSpace = Math.max(0, availHeight - (y3 - startY)); // Space left in column, never negative
+            const ppSectionHeight = Math.max(15, Math.min(ppRemainingSpace, Math.max(25, ppContentHeight + ppHeaderPadding)));
             let ppY = drawModernSection('Proven Process', col3X, y3, colWidth, ppSectionHeight);
             const ppSectionBottom = y3 + ppSectionHeight - 3; // Bottom boundary for overflow protection
             drawText(ppText, col3X + 4, ppY, colWidth - 8, 8, false, textDark, ppSectionBottom);
@@ -1932,11 +2028,12 @@
                 if (rock.owner) {
                     doc.setFillColor(...deepRed);
                     const ownerText = toAscii(rock.owner);
+                    // Set font before measuring to get accurate width
+                    doc.setFontSize(6);
+                    doc.setFont('helvetica', 'bold');
                     const ownerWidth = doc.getTextWidth(ownerText) + 4;
                     roundedRect(tCol2X + tColWidth - ownerWidth - 4, qrY - 3, ownerWidth, 5, 1, 'F');
                     doc.setTextColor(...white);
-                    doc.setFontSize(6);
-                    doc.setFont('helvetica', 'bold');
                     doc.text(ownerText, tCol2X + tColWidth - 6, qrY, { align: 'right' });
                 }
 
@@ -2001,12 +2098,13 @@
                             statusColor = textMuted;
                     }
                     const statusText = issue.status;
-                    const statusWidth = doc.getTextWidth(statusText) * 0.8 + 4;
+                    // Set font before measuring to get accurate width
+                    doc.setFontSize(5);
+                    doc.setFont('helvetica', 'bold');
+                    const statusWidth = doc.getTextWidth(statusText) + 4;
                     doc.setFillColor(...statusBg);
                     roundedRect(tCol3X + tColWidth - statusWidth - 4, issY - 3, statusWidth, 5, 1, 'F');
                     doc.setTextColor(...statusColor);
-                    doc.setFontSize(5);
-                    doc.setFont('helvetica', 'bold');
                     doc.text(statusText, tCol3X + tColWidth - 6, issY - 0.5, { align: 'right' });
                 }
 
@@ -2021,15 +2119,18 @@
             showToast('PDF exported successfully', 'success');
         }
 
-        // Auto-save on input changes
+        // Keep in-memory data model fresh on input changes
         document.addEventListener('input', () => {
             collectFormData();
+            collectListsFromDOM();
         });
 
         // Initialize on load
         document.addEventListener('DOMContentLoaded', () => {
-            // Set default VTO date to today
-            document.getElementById('vtoDate').valueAsDate = new Date();
+            // Set default VTO date to today (synced to both DOM and data model)
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('vtoDate').value = today;
+            vtoData.vtoDate = today;
             loadFromLocalStorage();
         });
     </script>
